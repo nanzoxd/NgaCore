@@ -1,0 +1,218 @@
+# ──────────────────────────────────────────────────────────────
+#  SMPCore config. Almost everything here can be changed in-game
+#  with /smp. Text uses MiniMessage: https://docs.advntr.dev/minimessage
+# ──────────────────────────────────────────────────────────────
+prefix: "<#6d93ab>[</#6d93ab><bold><gradient:#f2ede4:#7d8790:#d9d9d9:#5f6770>ꜱᴍᴘ</gradient></bold><#6d93ab>]</#6d93ab> "
+
+# ── Damage limiters ───────────────────────────────────────────
+# max = highest final damage (in HP, 2 HP = 1 heart) one hit can deal.
+damage-limiters:
+  enabled: true
+  players-only: true
+  limits:
+    mace:            { enabled: true,  max: 20.0 }
+    spear:           { enabled: false, max: 20.0 }
+    trident:         { enabled: false, max: 20.0 }
+    bow:             { enabled: false, max: 20.0 }
+    crossbow:        { enabled: false, max: 20.0 }
+    tnt:             { enabled: false, max: 20.0 }
+    tnt_minecart:    { enabled: true,  max: 8.0 }
+    end_crystal:     { enabled: false, max: 20.0 }
+    block_explosion: { enabled: false, max: 20.0 }
+    wind_charge:     { enabled: false, max: 20.0 }
+
+# ── Cooldowns (shown on the item itself in-game) ──────────────
+cooldowns:
+  enabled: true
+  items:
+    mace:                   { enabled: true,  seconds: 60.0 }
+    spear:                  { enabled: false, seconds: 10.0 }
+    wind_charge:            { enabled: false, seconds: 5.0 }
+    ender_pearl:            { enabled: false, seconds: 15.0 }
+    golden_apple:           { enabled: false, seconds: 10.0 }
+    enchanted_golden_apple: { enabled: false, seconds: 60.0 }
+    chorus_fruit:           { enabled: false, seconds: 10.0 }
+    firework_rocket:        { enabled: false, seconds: 5.0 }
+    trident:                { enabled: false, seconds: 10.0 }
+  message: "<#EBB071><item></#EBB071> <#abc4d1>ready in</#abc4d1> <#F2DC84><time>s"
+  sound: "entity.villager.no"
+
+# ── Item ban (Netherite menu uses this list too) ──────────────
+item-ban:
+  enabled: true
+  remove-from-inventories: true   # scan inventories every 5s and delete banned items
+  block-use: true
+  block-placing: true
+  banned: []
+  message: "That item is <#E8847C>banned</#E8847C> on this server."
+
+# ── Potion limiter ────────────────────────────────────────────
+# effects: -1 = unlimited, 0 = banned, n = max level allowed (1 = level I)
+potion-limiter:
+  enabled: true
+  block-brewing: true            # stands refuse to brew banned potions
+  block-use: true                # can't drink / splash / lingering / tipped arrows
+  allow-command-effects: true    # /effect give and plugins can still apply banned effects
+  message: "That potion effect is <#E8847C>limited</#E8847C> on this server."
+  effects:
+    strength: 1
+    speed: 2
+
+# ── Enchantment limiter ───────────────────────────────────────
+# limits: -1 = unlimited, 0 = banned, n = max level. item-limits override by item (wildcards ok).
+enchant-limiter:
+  enabled: true
+  limits:
+    protection: 3
+  item-limits: {}
+  #  item-limits:
+  #    "*_SWORD": { sharpness: 4 }
+  message: "That enchantment is <#E8847C>over the limit</#E8847C> on this server."
+
+# ── Dimension ban ─────────────────────────────────────────────
+dimension-ban:
+  nether: false
+  end: false
+  block-teleports: true
+  message: "<#EBB071><dimension></#EBB071> is currently <#E8847C>closed</#E8847C>."
+
+# ── Death ban ─────────────────────────────────────────────────
+death-ban:
+  enabled: false
+  duration: "1h"
+  pvp-only: false
+  spectator: false                # true = spectator mode for "duration" instead of a ban
+  message: "You died. Come back when your ban ends."
+
+# ── TempBan ───────────────────────────────────────────────────
+tempban:
+  default-reason: "No reason given"
+  broadcast: true
+  broadcast-message: "<#E8847C><player></#E8847C> <#abc4d1>was banned for</#abc4d1> <#EBB071><duration></#EBB071> <#abc4d1>(<reason>)"
+  # Kick / login screen. Placeholders: <reason> <remaining> <expires> <duration> <staff>
+  screen:
+    - "<gradient:#f2ede4:#abc4d1:#6d93ab>You are temporarily banned</gradient>"
+    - ""
+    - "<#abc4d1>Reason <#E8847C><reason>"
+    - "<#abc4d1>Remaining <#EBB071><remaining>"
+    - "<#abc4d1>Expires <#8FC3E0><expires>"
+  durations: ["1h", "6h", "12h", "1d", "3d", "7d", "14d", "30d", "perm"]
+  # Button name -> full custom message shown to the player. /tempban ban <p> <time> <preset-name> works too.
+  presets:
+    Cheating: "Unfair advantage (hacked client or exploit)."
+    Griefing: "Destroying or stealing other players' builds."
+    Spam: "Spamming chat or advertising."
+    Toxicity: "Harassment, hate speech or toxic behaviour."
+    Exploiting: "Abusing a bug or duplication glitch."
+    Ban evading: "Joining on an alt to dodge a ban."
+
+# ── Chat moderation ───────────────────────────────────────────
+chat:
+  enabled: true
+  format:
+    enabled: true
+    text: "<#abc4d1><player> <#e3dccf>› <#f2ede4><message>"
+  cooldown: { enabled: true, seconds: 2.0 }
+  duplicate: { enabled: true }
+  caps: { enabled: true, min-length: 8, max-percent: 70 }
+  links: { enabled: false }
+  blocked-words: { enabled: true, action: CENSOR, words: [] }   # action: CANCEL or CENSOR
+  mentions: { enabled: true, window-seconds: 60 }
+  private-messages: { enabled: true }
+  join-leave: { enabled: true }
+  death-messages: { enabled: true, combat-window-seconds: 10, kill-icon: "⚔" }
+  hide-advancements: true
+  messages:
+    cooldown: "<#abc4d1>Slow down <#EBB071><time>s</#EBB071> left."
+    duplicate: "<#abc4d1>You already sent that. <#8FC3E0>Say something new."
+    blocked-word: "<#E8847C>Watch your language."
+    links: "<#E8847C>Links are not allowed in chat."
+    pm-usage: "<#abc4d1>Usage <#8FC3E0>/msg <player> <message>"
+    pm-offline: "<#E8847C>That player isn't online."
+    pm-nobody: "<#abc4d1>Nobody to reply to."
+    pm-sent: "<#EBB071>[MSG] <#e3dccf>you <#abc4d1>→ <#8FC3E0><target><#abc4d1>: <#f2ede4><message>"
+    pm-received: "<#EBB071>[MSG] <#8FC3E0><sender> <#abc4d1>→ <#e3dccf>you<#abc4d1>: <#f2ede4><message>"
+    join: "<#97D69A>→ <#f2ede4><player> <#abc4d1>joined"
+    leave: "<#E8847C>← <#f2ede4><player> <#abc4d1>left"
+  sounds:
+    mention:         { sound: "block.note_block.chime", volume: 1.0, pitch: 1.6 }
+    private-message: { sound: "block.note_block.bell",  volume: 1.0, pitch: 1.4 }
+    pm-sent:         { sound: "block.note_block.bell",  volume: 0.4, pitch: 1.9 }
+    blocked:         { sound: "block.vault.insert_item_fail", volume: 1.0, pitch: 1.0 }
+
+# ── Xaero's Minimap / World Map ───────────────────────────────
+# Replaces XaeroForceDisabler (remove that plugin). Toggle both in /smp -> Xaero Minimap.
+#   fair-mode: Xaero "fair play" (radar, cave mode etc. off)    disable: minimap and world map off
+# Priority: disable > fair-mode. Per-world overrides beat the global values, for example:
+#   worlds:
+#     world_nether: { fair-mode: true }
+xaero:
+  enabled: true
+  fair-mode: false
+  disable: false
+  worlds: {}
+
+# ── Dragon health (vanilla 200, max 1024) ─────────────────────
+dragon-health:
+  enabled: false
+  health: 600.0
+
+# ── Punishments (/punish) ─────────────────────────────────────
+# Warning count -> temp-ban length. Uses the TempBan presets and durations above.
+punish:
+  escalation:
+    3: "1h"
+    5: "1d"
+    7: "perm"
+
+# ── Tweaks (switch them in /smp -> Gameplay Tweaks / Protection and Rules) ──
+tweaks:
+  one-player-sleep: false
+  hide-locator-bar: false
+  totem-keep-effects: false
+  anvil-no-limit: false
+  armor-stand-arms: false
+  immortal-death-drops: false
+  kill-sound: false
+  kill-sound-key: "entity.player.levelup"
+  no-falling-blocks: false
+  no-fire-spread: false
+  no-explosion-grief: false
+  naked-protection: false
+  afk-protection: false
+  afk-seconds: 120
+  combat-log: false
+  combat-seconds: 15
+  pvp-off: false
+  ban-tipped-arrows: false
+  disable-vaults: false
+  block-placing: false
+  block-breaking: false
+  maintenance: false
+  mob-disabler: false
+  mob-disabler-types: []          # e.g. [PHANTOM, CREEPER]
+  ban-crystal-pvp: false
+  ban-bed-bombing: false
+  ban-pearl: false                # pearls can't be thrown, but players can still carry them
+  evoker-totem-drop: true         # false = evokers no longer drop a totem of undying
+  ban-minecart: false
+  ban-villager-killing: false
+  disable-phantoms: false
+  no-mob-spawning: false
+  no-mob-griefing: false
+  book-limit: false
+  max-book-pages: 50
+  max-page-length: 256
+  ban-spawner-mining: false
+  player-head-drop: false
+  head-chance: 1.0
+  ban-explosives: false
+  ban-draining: false
+  void-protection: false
+  cobweb-decay: false
+  cobweb-seconds: 10
+  xp-clumps: false
+  apple-drops: false
+  apple-chance: 0.005
+  heavy-core-drop: false
+  heavy-core-chance: 0.02

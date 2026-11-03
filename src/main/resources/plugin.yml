@@ -1,0 +1,68 @@
+name: SMPCore
+version: '${project.version}'
+main: me.smpcore.SMPCore
+api-version: '1.21'
+description: All-in-one SMP rules plugin with a GUI for every feature.
+commands:
+  smp:
+    description: Open the settings menu or run an admin sub-command.
+    usage: /smp [reload|itemban|help]
+    aliases: [smpcore, smpsettings]
+    permission: smpcore.admin
+  tempban:
+    description: Temporary bans with a GUI and custom messages.
+    usage: /tempban <ban|unban|list|history|gui>
+    aliases: [tban]
+    permission: smpcore.tempban
+  settings:
+    description: Open the settings menu (same as /smp).
+    usage: /settings
+    permission: smpcore.admin
+  punish:
+    description: Open the punish menu (ban, mute, kick, warn).
+    usage: /punish <player>
+    permission: smpcore.tempban
+  pvp:
+    description: Toggle your own PvP.
+    usage: /pvp
+  msg:
+    description: Send a private message.
+    usage: /msg <player> <message>
+    aliases: [tell, w, whisper, pm]
+  reply:
+    description: Reply to your last private message.
+    usage: /reply <message>
+    aliases: [r]
+permissions:
+  smpcore.admin:
+    description: Settings GUI and admin commands.
+    default: op
+  smpcore.tempban:
+    description: TempBan commands and GUI.
+    default: op
+  smpcore.bypass.damage:
+    default: false
+  smpcore.bypass.cooldown:
+    default: false
+  smpcore.bypass.itemban:
+    default: false
+  smpcore.bypass.potion:
+    default: false
+  smpcore.bypass.enchant:
+    default: false
+  smpcore.bypass.dimension:
+    default: false
+  smpcore.bypass.deathban:
+    default: false
+  smpcore.bypass.xaero:
+    description: Never restricted by the Xaero minimap fair play / disable switches.
+    default: false
+  smpcore.chat.bypass:
+    description: Skip cooldown, duplicate, word, caps and link filters.
+    default: false
+  smpcore.bypass.tweaks:
+    description: Skip block placing/breaking, vault and combat-log rules.
+    default: false
+  smpcore.maintenance.bypass:
+    description: Join while maintenance mode is on.
+    default: op
