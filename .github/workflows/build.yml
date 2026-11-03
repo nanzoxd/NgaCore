@@ -25,6 +25,6 @@ jobs:
       - name: Upload jar
         uses: actions/upload-artifact@v4
         with:
-          name: NgaCore
-          path: target/NgaCore-*.jar
+          name: SMPCore
+          path: target/SMPCore-*.jar
           if-no-files-found: error
