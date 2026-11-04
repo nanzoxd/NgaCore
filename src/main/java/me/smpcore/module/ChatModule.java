@@ -268,10 +268,10 @@ public final class ChatModule implements Listener {
 
     private Component stats(Player p) {
         double[] a = combat.getOrDefault(p.getUniqueId(), new double[2]);
-        return Theme.MM.deserialize("<#f2ede4>Combat stats\n"
-                + "<#abc4d1>Ping <" + Theme.BLUE + ">" + p.getPing() + "ms\n"
-                + "<#abc4d1>Damage dealt <" + Theme.GREEN + ">" + hearts(a[0]) + " ❤\n"
-                + "<#abc4d1>Damage taken <" + Theme.RED + ">" + hearts(a[1]) + " ❤");
+        return Theme.MM.deserialize("<#cdd5e3>Combat stats\n"
+                + "<#9babc7>Ping <" + Theme.BLUE + ">" + p.getPing() + "ms\n"
+                + "<#9babc7>Damage dealt <" + Theme.GREEN + ">" + hearts(a[0]) + " ❤\n"
+                + "<#9babc7>Damage taken <" + Theme.RED + ">" + hearts(a[1]) + " ❤");
     }
 
     private static String hearts(double hp) {

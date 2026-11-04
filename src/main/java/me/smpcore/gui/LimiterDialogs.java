@@ -39,8 +39,8 @@ public final class LimiterDialogs {
             Row r = hit.get(i);
             opts.add(new Dialogs.Opt(r.label(), "Click to set the limit", r.click()));
         }
-        if (pg > 0) opts.add(new Dialogs.Opt("< Previous", null, () -> reopen.accept(q, pg - 1)));
-        if (pg < pages - 1) opts.add(new Dialogs.Opt("Next >", null, () -> reopen.accept(q, pg + 1)));
+        if (pg > 0) opts.add(new Dialogs.Opt(Dialogs.prev(), null, () -> reopen.accept(q, pg - 1)));
+        if (pg < pages - 1) opts.add(new Dialogs.Opt(Dialogs.next(), null, () -> reopen.accept(q, pg + 1)));
         opts.addAll(extra);
         if (!q.isEmpty()) opts.add(new Dialogs.Opt(Theme.red("Clear search"), null, () -> reopen.accept("", 0)));
         List<String> body = List.of(Theme.yellow(hit.size()) + " found, page " + Theme.yellow(pg + 1) + "/" + pages

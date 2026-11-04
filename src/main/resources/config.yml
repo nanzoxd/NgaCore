@@ -2,7 +2,7 @@
 #  SMPCore config. Almost everything here can be changed in-game
 #  with /smp. Text uses MiniMessage: https://docs.advntr.dev/minimessage
 # ──────────────────────────────────────────────────────────────
-prefix: "<#6d93ab>[</#6d93ab><bold><gradient:#f2ede4:#7d8790:#d9d9d9:#5f6770>ꜱᴍᴘ</gradient></bold><#6d93ab>]</#6d93ab> "
+prefix: "<#6981ab>[</#6981ab><bold><gradient:#C3C3C3:#E7E7E7:#E7E7E7>ꜱᴍᴘ</gradient></bold><#6981ab>]</#6981ab> "
 
 # ── Damage limiters ───────────────────────────────────────────
 # max = highest final damage (in HP, 2 HP = 1 heart) one hit can deal.
@@ -34,17 +34,51 @@ cooldowns:
     chorus_fruit:           { enabled: false, seconds: 10.0 }
     firework_rocket:        { enabled: false, seconds: 5.0 }
     trident:                { enabled: false, seconds: 10.0 }
-  message: "<#EBB071><item></#EBB071> <#abc4d1>ready in</#abc4d1> <#F2DC84><time>s"
+  message: "<#FFAA33><item></#FFAA33> <#9babc7>ready in</#9babc7> <#FFE45C><time>s"
   sound: "entity.villager.no"
 
-# ── Item ban (Netherite menu uses this list too) ──────────────
+# ── Item ban (also used by the Spear Ban menu)
+# whitelist: custom weapons that stay allowed even when their base item is banned. Add them in /smp -> Spear Ban ->
+# Custom weapon whitelist, or hold one and run /smp whitelist add. Each entry matches by material plus the details
+# it recorded (model, cmd = custom model data, name, tags). ──────────────
 item-ban:
   enabled: true
   remove-from-inventories: true   # scan inventories every 5s and delete banned items
   block-use: true
   block-placing: true
   banned: []
-  message: "That item is <#E8847C>banned</#E8847C> on this server."
+  whitelist: []                   # custom weapons allowed even if their base item is banned (managed in the menu)
+  message: "That item is <#FF5555>banned</#FF5555> on this server."
+
+# ── Netherite ban (Netherite menu) ────────────────────────────
+# Only armour and tools (and the spear). A banned piece can't be upgraded at the Smithing Table.
+# Players can still hold, wear and use netherite they already have. Bypass: smpcore.bypass.itemban
+netherite-ban:
+  enabled: true
+  items: []          # e.g. [NETHERITE_HELMET, NETHERITE_SWORD]
+  message: "That netherite upgrade is <#FF5555>banned</#FF5555> on this server."
+
+# ── Insta Restock (switch in /smp -> Util) ────────────────────
+# Villagers and wandering traders restock the moment a trade screen opens or a trade is made.
+instarestock:
+  enabled: false
+  wandering-traders: true
+  disable-price-penalty: true     # also resets demand so prices go back to normal
+  cooldown-seconds: 0             # 0 = instant every time
+  villager-blacklist: []          # professions to skip, e.g. [librarian]
+
+# ── Grace (switch in /smp -> PVP -> Grace) ───────────────────
+# Resistance IV + Saturation for 30 minutes and a sidebar clock "🕛 Grace / 30:00".
+# The clock is green, then yellow, orange and red as time runs out.
+# Time only counts while the player is online. /smp grace start <player|all> restarts it.
+grace:
+  enabled: false
+  minutes: 30
+  on-join: true                  # every join gives a fresh grace period
+  on-respawn: false              # restart grace after every death
+  resistance: { enabled: true, level: 4 }
+  saturation: { enabled: true }
+  scoreboard: { enabled: true, icon: "🕛", title: "ɢʀᴀᴄᴇ", pad: 3 }   # small-caps title, time centred with pad spaces
 
 # ── Potion limiter ────────────────────────────────────────────
 # effects: -1 = unlimited, 0 = banned, n = max level allowed (1 = level I)
@@ -53,7 +87,7 @@ potion-limiter:
   block-brewing: true            # stands refuse to brew banned potions
   block-use: true                # can't drink / splash / lingering / tipped arrows
   allow-command-effects: true    # /effect give and plugins can still apply banned effects
-  message: "That potion effect is <#E8847C>limited</#E8847C> on this server."
+  message: "That potion effect is <#FF5555>limited</#FF5555> on this server."
   effects:
     strength: 1
     speed: 2
@@ -67,14 +101,14 @@ enchant-limiter:
   item-limits: {}
   #  item-limits:
   #    "*_SWORD": { sharpness: 4 }
-  message: "That enchantment is <#E8847C>over the limit</#E8847C> on this server."
+  message: "That enchantment is <#FF5555>over the limit</#FF5555> on this server."
 
 # ── Dimension ban ─────────────────────────────────────────────
 dimension-ban:
   nether: false
   end: false
   block-teleports: true
-  message: "<#EBB071><dimension></#EBB071> is currently <#E8847C>closed</#E8847C>."
+  message: "<#FFAA33><dimension></#FFAA33> is currently <#FF5555>closed</#FF5555>."
 
 # ── Death ban ─────────────────────────────────────────────────
 death-ban:
@@ -88,14 +122,31 @@ death-ban:
 tempban:
   default-reason: "No reason given"
   broadcast: true
-  broadcast-message: "<#E8847C><player></#E8847C> <#abc4d1>was banned for</#abc4d1> <#EBB071><duration></#EBB071> <#abc4d1>(<reason>)"
-  # Kick / login screen. Placeholders: <reason> <remaining> <expires> <duration> <staff>
+  broadcast-message: "<#FF5555><player></#FF5555> <#9babc7>was banned for</#9babc7> <#FFAA33><duration></#FFAA33> <#9babc7>(<reason>)"
+  # Where banned players can appeal (shown on the ban screen, e.g. your Discord invite).
+  appeal: "discord.gg/yourserver"
+  # Ban animation: a giant mace slams the player (red shockwave), then they are kicked with the ban screen.
+  animation:
+    enabled: true
+    height: 12                  # blocks above the player where the mace appears
+    scale: 5                    # size of the mace
+    lead: 5                     # blocks in front of the player the mace starts from (so they see its face)
+    windup-ticks: 14
+    kick-delay-ticks: 30        # wait after the slam before the kick screen
+    ground-radius: 6            # ground blocks within this many blocks jump when the mace lands (0 = off)
+    sound-radius: 24            # only players this close hear the animation sounds
+  # Kick / login screen. Placeholders: <reason> <remaining> <expires> <duration> <staff> <appeal>
+  # <remaining> is calculated when the player joins or is kicked, so it is always the time left.
   screen:
-    - "<gradient:#f2ede4:#abc4d1:#6d93ab>You are temporarily banned</gradient>"
+    - "<bold><#FF5555>ʏᴏᴜ ᴀʀᴇ ʙᴀɴɴᴇᴅ</#FF5555></bold>"
     - ""
-    - "<#abc4d1>Reason <#E8847C><reason>"
-    - "<#abc4d1>Remaining <#EBB071><remaining>"
-    - "<#abc4d1>Expires <#8FC3E0><expires>"
+    - "<gradient:#9babc7:#6981ab>Reason</gradient> <#FF5555><reason>"
+    - "<gradient:#9babc7:#6981ab>Time left</gradient> <#FFAA33><remaining>"
+    - "<gradient:#9babc7:#6981ab>Duration</gradient> <#FFE45C><duration>"
+    - "<gradient:#9babc7:#6981ab>Expires</gradient> <#55B8FF><expires>"
+    - "<gradient:#9babc7:#6981ab>Banned by</gradient> <#cdd5e3><staff>"
+    - ""
+    - "<gradient:#cdd5e3:#9babc7>Appeal at</gradient> <#55FF7F><appeal>"
   durations: ["1h", "6h", "12h", "1d", "3d", "7d", "14d", "30d", "perm"]
   # Button name -> full custom message shown to the player. /tempban ban <p> <time> <preset-name> works too.
   presets:
@@ -111,7 +162,7 @@ chat:
   enabled: true
   format:
     enabled: true
-    text: "<#abc4d1><player> <#e3dccf>› <#f2ede4><message>"
+    text: "<#9babc7><player> <#cdd5e3>› <#cdd5e3><message>"
   cooldown: { enabled: true, seconds: 2.0 }
   duplicate: { enabled: true }
   caps: { enabled: true, min-length: 8, max-percent: 70 }
@@ -123,17 +174,17 @@ chat:
   death-messages: { enabled: true, combat-window-seconds: 10, kill-icon: "⚔" }
   hide-advancements: true
   messages:
-    cooldown: "<#abc4d1>Slow down <#EBB071><time>s</#EBB071> left."
-    duplicate: "<#abc4d1>You already sent that. <#8FC3E0>Say something new."
-    blocked-word: "<#E8847C>Watch your language."
-    links: "<#E8847C>Links are not allowed in chat."
-    pm-usage: "<#abc4d1>Usage <#8FC3E0>/msg <player> <message>"
-    pm-offline: "<#E8847C>That player isn't online."
-    pm-nobody: "<#abc4d1>Nobody to reply to."
-    pm-sent: "<#EBB071>[MSG] <#e3dccf>you <#abc4d1>→ <#8FC3E0><target><#abc4d1>: <#f2ede4><message>"
-    pm-received: "<#EBB071>[MSG] <#8FC3E0><sender> <#abc4d1>→ <#e3dccf>you<#abc4d1>: <#f2ede4><message>"
-    join: "<#97D69A>→ <#f2ede4><player> <#abc4d1>joined"
-    leave: "<#E8847C>← <#f2ede4><player> <#abc4d1>left"
+    cooldown: "<#9babc7>Slow down <#FFAA33><time>s</#FFAA33> left."
+    duplicate: "<#9babc7>You already sent that. <#55B8FF>Say something new."
+    blocked-word: "<#FF5555>Watch your language."
+    links: "<#FF5555>Links are not allowed in chat."
+    pm-usage: "<#9babc7>Usage <#55B8FF>/msg <player> <message>"
+    pm-offline: "<#FF5555>That player isn't online."
+    pm-nobody: "<#9babc7>Nobody to reply to."
+    pm-sent: "<#850120>[MSG] <#cdd5e3>you <#9babc7>→ <#55B8FF><target><#9babc7>: <#cdd5e3><message>"
+    pm-received: "<#850120>[MSG] <#55B8FF><sender> <#9babc7>→ <#cdd5e3>you<#9babc7>: <#cdd5e3><message>"
+    join: "<#55FF7F>→ <#cdd5e3><player> <#9babc7>joined"
+    leave: "<#FF5555>← <#cdd5e3><player> <#9babc7>left"
   sounds:
     mention:         { sound: "block.note_block.chime", volume: 1.0, pitch: 1.6 }
     private-message: { sound: "block.note_block.bell",  volume: 1.0, pitch: 1.4 }

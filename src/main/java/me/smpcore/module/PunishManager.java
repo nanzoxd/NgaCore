@@ -147,6 +147,6 @@ public final class PunishManager implements Listener {
     }
 
     public void kick(Player p, String reason) {
-        p.kick(Theme.parse(Theme.GRADIENT + "You were kicked</gradient>\n\n<#abc4d1>Reason <#E8847C>" + Theme.esc(reason)));
+        p.kick(Theme.parse(Theme.GRADIENT + "You were kicked</gradient>\n\n<#9babc7>Reason <#FF5555>" + Theme.esc(reason)));
     }
 }

@@ -265,7 +265,7 @@ public final class TweaksModule implements Listener, CommandExecutor {
         Player p = e.getPlayer();
         if (p.isOp() || p.hasPermission("smpcore.maintenance.bypass")) return;
         e.disallow(PlayerLoginEvent.Result.KICK_OTHER, Theme.parse(plugin.getConfig().getString("tweaks.maintenance-message",
-                Theme.GRADIENT + "Maintenance</gradient>\n<#abc4d1>The server is closed right now. Come back soon.")));
+                Theme.GRADIENT + "Maintenance</gradient>\n<#9babc7>The server is closed right now. Come back soon.")));
     }
 
     @EventHandler(ignoreCancelled = true)

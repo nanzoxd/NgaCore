@@ -84,6 +84,7 @@ public abstract class Gui implements InventoryHolder {
     protected Material accent() {
         if (titleText.startsWith("Punish") || titleText.startsWith("TempBan")) return Material.CYAN_STAINED_GLASS_PANE;
         return switch (titleText) {
+            case "Grace" -> Material.LIME_STAINED_GLASS_PANE;
             case "Cooldowns" -> Material.YELLOW_STAINED_GLASS_PANE;
             case "Damage Limiters" -> Material.RED_STAINED_GLASS_PANE;
             case "Netherite Ban" -> Material.BLACK_STAINED_GLASS_PANE;
@@ -121,7 +122,7 @@ public abstract class Gui implements InventoryHolder {
         boolean on = cfg().getBoolean(path);
         List<String> lore = new ArrayList<>();
         for (String d : desc) if (d != null && !d.isEmpty()) lore.add(Theme.c(Theme.DIM, d));
-        lore.add(Lore.state(on));
+        lore.addAll(Lore.toggle(on));
         set(slot, Items.of(icon).name(label).lore(lore).glow(on).build(), e -> {
             if (e.isRightClick()) cfg().set(path, false);
             else if (e.isLeftClick()) cfg().set(path, true);

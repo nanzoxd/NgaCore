@@ -22,6 +22,13 @@ public final class Dialogs {
     /** One button. Label and tip are MiniMessage. */
     public record Opt(String label, String tip, Runnable run) {}
 
+    /** Navigation buttons: always red, always with a symbol. */
+    public static String prev() { return Theme.red("← Previous"); }
+
+    public static String next() { return Theme.red("Next →"); }
+
+    public static String exitLabel(boolean hasBack) { return Theme.red(hasBack ? "✖ Back" : "✖ Close"); }
+
     private static final ClickCallback.Options CB = ClickCallback.Options.builder()
             .uses(ClickCallback.UNLIMITED_USES).lifetime(Duration.ofMinutes(15)).build();
 
@@ -41,7 +48,7 @@ public final class Dialogs {
         List<ActionButton> buttons = new ArrayList<>();
         for (Opt o : opts) buttons.add(button(o.label(), o.tip(), o.run()));
         DialogBase base = DialogBase.builder(Theme.title(title)).canCloseWithEscape(true).body(bodyOf(body)).build();
-        ActionButton exit = button(back == null ? "Close" : "Back", null, back);
+        ActionButton exit = button(exitLabel(back != null), null, back);
         p.showDialog(Dialog.create(f -> f.empty().base(base).type(DialogType.multiAction(buttons, exit, columns))));
     }
 
@@ -59,7 +66,7 @@ public final class Dialogs {
                     if (v != null) save.accept(v);
                 }, CB)));
         for (Opt o : extra) buttons.add(button(o.label(), o.tip(), o.run()));
-        ActionButton exit = button(back == null ? "Close" : "Back", null, back);
+        ActionButton exit = button(exitLabel(back != null), null, back);
         p.showDialog(Dialog.create(f -> f.empty().base(base).type(DialogType.multiAction(buttons, exit, 2))));
     }
 
@@ -74,7 +81,7 @@ public final class Dialogs {
         for (Opt o : opts) buttons.add(button(o.label(), o.tip(), o.run()));
         buttons.add(ActionButton.create(Theme.parse(Theme.blue("Search")), null, 150,
                 DialogAction.customClick((view, audience) -> onSearch.accept(view.getText("q")), CB)));
-        ActionButton exit = button(back == null ? "Close" : "Back", null, back);
+        ActionButton exit = button(exitLabel(back != null), null, back);
         p.showDialog(Dialog.create(f -> f.empty().base(base).type(DialogType.multiAction(buttons, exit, columns))));
     }
 }

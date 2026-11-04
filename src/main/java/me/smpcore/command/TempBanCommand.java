@@ -36,6 +36,40 @@ public final class TempBanCommand implements TabExecutor {
                 + Theme.blue("/tempban history") + " <player>   " + Theme.blue("/tempban gui"));
     }
 
+    /** Shared by /tempban ban and the /ban override. reasonText may be null. */
+    public void ban(CommandSender s, String targetName, String timeText, String reasonText) {
+        OfflinePlayer t = target(targetName);
+        if (t == null) {
+            Msg.send(s, Theme.red("Unknown player") + " (they must have joined before).");
+            return;
+        }
+        Long ms = TimeUtil.parse(timeText);
+        if (ms == null) {
+            Msg.send(s, Theme.red("Invalid time.") + " Try " + Theme.yellow("30m") + ", " + Theme.yellow("2d") + " or " + Theme.yellow("perm") + ".");
+            return;
+        }
+        String reason = reasonText != null ? reasonText : plugin.getConfig().getString("tempban.default-reason", "No reason given");
+        ConfigurationSection presets = plugin.getConfig().getConfigurationSection("tempban.presets");
+        if (presets != null) {
+            for (String k : presets.getKeys(false)) {
+                if (k.equalsIgnoreCase(reason)) reason = presets.getString(k, reason);
+            }
+        }
+        String name = t.getName() == null ? targetName : t.getName();
+        plugin.tempBans.ban(t.getUniqueId(), name, ms, reason, s.getName());
+        Msg.send(s, "Banned " + Theme.blue(name) + " for " + Theme.orange(TimeUtil.format(ms)) + ".");
+    }
+
+    public void unban(CommandSender s, String name) {
+        TempBanManager.Entry e = plugin.tempBans.find(name);
+        if (e == null) {
+            Msg.send(s, Theme.red("No active ban") + " for that player.");
+            return;
+        }
+        plugin.tempBans.unban(e.uuid());
+        Msg.send(s, "Unbanned " + Theme.blue(e.name()) + ".");
+    }
+
     @Override
     public boolean onCommand(CommandSender s, Command cmd, String label, String[] a) {
         if (a.length == 0 || a[0].equalsIgnoreCase("gui")) {
@@ -46,27 +80,7 @@ public final class TempBanCommand implements TabExecutor {
         switch (a[0].toLowerCase()) {
             case "ban" -> {
                 if (a.length < 3) { usage(s); return true; }
-                OfflinePlayer t = target(a[1]);
-                if (t == null) {
-                    Msg.send(s, Theme.red("Unknown player") + " (they must have joined before).");
-                    return true;
-                }
-                Long ms = TimeUtil.parse(a[2]);
-                if (ms == null) {
-                    Msg.send(s, Theme.red("Invalid time.") + " Try " + Theme.yellow("30m") + ", " + Theme.yellow("2d") + " or " + Theme.yellow("perm") + ".");
-                    return true;
-                }
-                String reason = a.length > 3 ? String.join(" ", Arrays.copyOfRange(a, 3, a.length))
-                        : plugin.getConfig().getString("tempban.default-reason", "No reason given");
-                ConfigurationSection presets = plugin.getConfig().getConfigurationSection("tempban.presets");
-                if (presets != null) {
-                    for (String k : presets.getKeys(false)) {
-                        if (k.equalsIgnoreCase(reason)) reason = presets.getString(k, reason);
-                    }
-                }
-                String name = t.getName() == null ? a[1] : t.getName();
-                plugin.tempBans.ban(t.getUniqueId(), name, ms, reason, s.getName());
-                Msg.send(s, "Banned " + Theme.blue(name) + " for " + Theme.orange(TimeUtil.format(ms)) + ".");
+                ban(s, a[1], a[2], a.length > 3 ? String.join(" ", Arrays.copyOfRange(a, 3, a.length)) : null);
             }
             case "unban" -> {
                 if (a.length < 2) { usage(s); return true; }

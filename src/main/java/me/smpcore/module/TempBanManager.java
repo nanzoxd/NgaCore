@@ -158,7 +158,13 @@ public final class TempBanManager implements Listener {
         history.add(e);
         save();
         Player p = Bukkit.getPlayer(id);
-        if (p != null) Bukkit.getScheduler().runTask(plugin, () -> p.kick(screen(e)));
+        if (p != null) {
+            if (plugin.banAnimation != null && plugin.banAnimation.enabled()) {
+                Bukkit.getScheduler().runTask(plugin, () -> plugin.banAnimation.play(p, () -> p.kick(screen(e))));
+            } else {
+                Bukkit.getScheduler().runTask(plugin, () -> p.kick(screen(e)));
+            }
+        }
         if (plugin.getConfig().getBoolean("tempban.broadcast")) {
             Bukkit.broadcast(Theme.MM.deserialize(plugin.getConfig().getString("tempban.broadcast-message", ""),
                     Placeholder.unparsed("player", name),
@@ -182,6 +188,7 @@ public final class TempBanManager implements Listener {
                 Placeholder.unparsed("staff", e.staff()),
                 Placeholder.unparsed("remaining", e.permanent() ? "Permanent" : TimeUtil.format(Math.max(0, e.expires() - now))),
                 Placeholder.unparsed("duration", e.permanent() ? "Permanent" : TimeUtil.format(e.expires() - e.start())),
+                Placeholder.unparsed("appeal", plugin.getConfig().getString("tempban.appeal", "discord.gg/yourserver")),
                 Placeholder.unparsed("expires", e.permanent() ? "Never" : FMT.format(Instant.ofEpochMilli(e.expires())) + " UTC"));
         List<Component> lines = new ArrayList<>();
         for (String l : plugin.getConfig().getStringList("tempban.screen")) lines.add(Theme.MM.deserialize(l, r));

@@ -28,7 +28,7 @@ public final class Items {
     }
 
     public Items name(String mm) {
-        meta.displayName(Theme.parse("<#f2ede4>" + mm));
+        meta.displayName(Theme.parse("<gradient:#cdd5e3:#9babc7>" + mm + "</gradient>"));
         return this;
     }
 
@@ -81,8 +81,17 @@ public final class Items {
         return m.name().endsWith("_SPEAR");
     }
 
-    private static final Material[] SPEARS =
-            Arrays.stream(Material.values()).filter(Items::isSpear).toArray(Material[]::new);
+    private static final List<String> TIERS = List.of("WOODEN", "STONE", "COPPER", "IRON", "GOLDEN", "DIAMOND", "NETHERITE");
+
+    private static int tier(Material m) {
+        int i = TIERS.indexOf(m.name().replace("_SPEAR", ""));
+        return i < 0 ? TIERS.size() : i;
+    }
+
+    /** Weakest first (wooden ... netherite), so the menus always read in tier order. */
+    private static final Material[] SPEARS = Arrays.stream(Material.values()).filter(Items::isSpear)
+            .sorted(java.util.Comparator.comparingInt(Items::tier).thenComparing(Enum::name))
+            .toArray(Material[]::new);
 
     public static Material[] spears() {
         return SPEARS;

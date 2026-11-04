@@ -7,32 +7,33 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
 /**
- * Palette theme: #3a5a73 #6d93ab #abc4d1 #e3dccf #f2ede4.
- * The palette carries the sentence; accent colours (red, orange, yellow, green, blue) only mark key words.
+ * Blue palette theme: #052e74 #36578f #6981ab #9babc7 #cdd5e3. Blue text is drawn as gradients between
+ * neighbouring palette colours; vibrant accents (red, orange, yellow, green, blue) mark key words and states.
  */
 public final class Theme {
     private Theme() {}
 
     public static final MiniMessage MM = MiniMessage.miniMessage();
     // palette
-    public static final String DEEP = "#3a5a73";
-    public static final String MID = "#6d93ab";
-    public static final String SOFT = "#abc4d1";
-    public static final String SAND = "#e3dccf";
-    public static final String BRIGHT = "#f2ede4";
+    public static final String DEEP = "#052e74";
+    public static final String STEEL = "#36578f";
+    public static final String MID = "#6981ab";
+    public static final String SOFT = "#9babc7";
+    public static final String SAND = "#cdd5e3";
+    public static final String BRIGHT = "#cdd5e3";
 
     /** Light gradient for dark backgrounds (tooltips, chat, dialogs, kick screens). */
-    public static final String GRADIENT = "<gradient:#f2ede4:#abc4d1:#6d93ab>";
+    public static final String GRADIENT = "<gradient:#cdd5e3:#9babc7:#6981ab>";
     /** Dark gradient for the light-gray inventory title bar. */
-    public static final String GUI_GRADIENT = "<bold><gradient:#3a5a73:#6d93ab>";
+    public static final String GUI_GRADIENT = "<bold><gradient:#052e74:#36578f:#6981ab>";
 
     public static final String TEXT = SAND;
     public static final String DIM = SOFT;
-    public static final String RED = "#E8847C";
-    public static final String ORANGE = "#EBB071";
-    public static final String YELLOW = "#F2DC84";
-    public static final String GREEN = "#97D69A";
-    public static final String BLUE = "#8FC3E0";
+    public static final String RED = "#FF5555";
+    public static final String ORANGE = "#FFAA33";
+    public static final String YELLOW = "#FFE45C";
+    public static final String GREEN = "#55FF7F";
+    public static final String BLUE = "#55B8FF";
 
     /** MiniMessage -> component, never italic (for item names and lore). */
     public static Component parse(String mm) {
@@ -50,8 +51,14 @@ public final class Theme {
 
     /** Wrap text in an accent colour. */
     public static String c(String hex, Object text) {
+        // palette blues are drawn as gradients between neighbouring palette colours
+        if (hex.equalsIgnoreCase(DIM)) return "<gradient:" + BRIGHT + ":" + SOFT + ">" + text + "</gradient>";
+        if (hex.equalsIgnoreCase(MID)) return "<gradient:" + SOFT + ":" + MID + ">" + text + "</gradient>";
         return "<color:" + hex + ">" + text + "</color>";
     }
+
+    /** Palette gradient for any piece of text (names, headings). */
+    public static String grad(Object text) { return "<gradient:" + BRIGHT + ":" + SOFT + ">" + text + "</gradient>"; }
 
     public static String red(Object t) { return c(RED, t); }
     public static String orange(Object t) { return c(ORANGE, t); }

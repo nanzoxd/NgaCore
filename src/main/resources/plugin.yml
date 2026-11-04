@@ -9,6 +9,18 @@ commands:
     usage: /smp [reload|itemban|help]
     aliases: [smpcore, smpsettings]
     permission: smpcore.admin
+  ban:
+    description: Ban a player. Replaces the vanilla /ban.
+    usage: /ban <player> <duration> [reason]
+    permission: smpcore.tempban
+  unban:
+    description: Unban a player.
+    usage: /unban <player>
+    permission: smpcore.tempban
+  pardon:
+    description: Unban a player. Replaces the vanilla /pardon.
+    usage: /pardon <player>
+    permission: smpcore.tempban
   tempban:
     description: Temporary bans with a GUI and custom messages.
     usage: /tempban <ban|unban|list|history|gui>

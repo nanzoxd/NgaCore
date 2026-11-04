@@ -27,6 +27,11 @@ public abstract class PagedGui<T> extends Gui {
 
     protected abstract void onClick(T t, InventoryClickEvent e);
 
+    /** Row where the item grid starts (1 = right under the border). */
+    protected int gridTop() {
+        return 1;
+    }
+
     protected Supplier<Gui> parent() {
         return null;
     }
@@ -45,7 +50,7 @@ public abstract class PagedGui<T> extends Gui {
     @Override
     protected void build() {
         List<T> list = entries();
-        int per = 28;
+        int per = 7 * (5 - gridTop());
         int pages = Math.max(1, (list.size() + per - 1) / per);
         page = Math.max(0, Math.min(page, pages - 1));
         border();
@@ -53,13 +58,13 @@ public abstract class PagedGui<T> extends Gui {
             int idx = page * per + i;
             if (idx >= list.size()) break;
             T t = list.get(idx);
-            set(10 + (i / 7) * 9 + (i % 7), icon(t), e -> onClick(t, e));
+            set((gridTop() + i / 7) * 9 + 1 + (i % 7), icon(t), e -> onClick(t, e));
         }
         backButton(parent());
-        if (page > 0) set(48, Items.of(Material.ARROW).name("Previous page").build(), e -> { page--; refresh(); });
+        if (page > 0) set(48, Items.of(Material.ARROW).name(Theme.red("← Previous")).build(), e -> { page--; refresh(); });
         set(49, Items.of(Material.PAPER).name("Page " + Theme.yellow(page + 1) + "/" + pages)
                 .lore(Theme.yellow(list.size()) + " entries").build());
-        if (page < pages - 1) set(50, Items.of(Material.ARROW).name("Next page").build(), e -> { page++; refresh(); });
+        if (page < pages - 1) set(50, Items.of(Material.ARROW).name(Theme.red("Next →")).build(), e -> { page++; refresh(); });
         extra();
     }
 }

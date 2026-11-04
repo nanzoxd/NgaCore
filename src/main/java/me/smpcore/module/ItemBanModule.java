@@ -25,14 +25,18 @@ import org.bukkit.inventory.PlayerInventory;
 public final class ItemBanModule implements Listener {
     private final SMPCore plugin;
     private final Set<Material> banned = EnumSet.noneOf(Material.class);
+    /** Custom weapons that stay allowed even when their base item is banned. */
+    public final WeaponWhitelist whitelist;
 
     public ItemBanModule(SMPCore plugin) {
         this.plugin = plugin;
+        this.whitelist = new WeaponWhitelist(plugin);
         load();
         Bukkit.getScheduler().runTaskTimer(plugin, this::sweepAll, 100L, 100L);
     }
 
     public void load() {
+        whitelist.load();
         banned.clear();
         for (String s : plugin.getConfig().getStringList("item-ban.banned")) {
             Material m = Material.matchMaterial(s);
@@ -50,6 +54,11 @@ public final class ItemBanModule implements Listener {
 
     public boolean isBanned(Material m) {
         return enabled() && banned.contains(m);
+    }
+
+    /** Banned unless the item matches a custom-weapon whitelist rule. */
+    public boolean isBanned(ItemStack it) {
+        return it != null && isBanned(it.getType()) && !whitelist.matches(it);
     }
 
     public void set(Material m, boolean ban) {
@@ -83,7 +92,7 @@ public final class ItemBanModule implements Listener {
         boolean removed = false;
         for (int i = 0; i < contents.length; i++) {
             ItemStack it = contents[i];
-            if (it != null && banned.contains(it.getType())) {
+            if (it != null && isBanned(it)) {
                 inv.setItem(i, null);
                 removed = true;
             }
@@ -104,18 +113,18 @@ public final class ItemBanModule implements Listener {
     @EventHandler
     public void onSmith(PrepareSmithingEvent e) {
         ItemStack r = e.getResult();
-        if (r != null && isBanned(r.getType())) e.setResult(null);
+        if (r != null && isBanned(r)) e.setResult(null);
     }
 
     @EventHandler
     public void onCraft(PrepareItemCraftEvent e) {
         ItemStack r = e.getInventory().getResult();
-        if (r != null && isBanned(r.getType())) e.getInventory().setResult(null);
+        if (r != null && isBanned(r)) e.getInventory().setResult(null);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPickup(EntityPickupItemEvent e) {
-        if (e.getEntity() instanceof Player p && !bypass(p) && isBanned(e.getItem().getItemStack().getType())) {
+        if (e.getEntity() instanceof Player p && !bypass(p) && isBanned(e.getItem().getItemStack())) {
             e.setCancelled(true);
         }
     }
@@ -124,7 +133,7 @@ public final class ItemBanModule implements Listener {
     public void onUse(PlayerInteractEvent e) {
         if (!opt("block-use") || e.getAction() == Action.PHYSICAL) return;
         ItemStack it = e.getItem();
-        if (it != null && isBanned(it.getType()) && !bypass(e.getPlayer())) {
+        if (it != null && isBanned(it) && !bypass(e.getPlayer())) {
             e.setCancelled(true);
             warn(e.getPlayer());
         }
@@ -132,7 +141,7 @@ public final class ItemBanModule implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onPlace(BlockPlaceEvent e) {
-        if (opt("block-placing") && isBanned(e.getItemInHand().getType()) && !bypass(e.getPlayer())) {
+        if (opt("block-placing") && isBanned(e.getItemInHand()) && !bypass(e.getPlayer())) {
             e.setCancelled(true);
             warn(e.getPlayer());
         }
