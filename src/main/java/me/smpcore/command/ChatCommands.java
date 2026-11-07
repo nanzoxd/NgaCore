@@ -45,6 +45,7 @@ public final class ChatCommands implements TabExecutor {
             return true;
         }
         Player t = Bukkit.getPlayer(args[0]);
+        if (t != null && plugin.staff.isVanished(t) && !plugin.staff.canSeeVanished(p)) t = null;
         if (t == null) {
             Msg.send(p, chat.message("pm-offline"));
             return true;

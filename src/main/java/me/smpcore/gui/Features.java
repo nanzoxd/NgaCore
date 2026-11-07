@@ -87,7 +87,9 @@ public final class Features {
                         (p, back) -> LimiterDialogs.potions(plugin, p, potions, () -> back.get().open())),
                 new Feature(Category.PVP, Material.ENCHANTED_BOOK, "Enchant Limiter", "Dialog: search an enchant, set a limit.", "enchant-limiter.enabled",
                         (p, back) -> LimiterDialogs.enchants(plugin, p, enchants, () -> back.get().open())),
-                sw(Category.PVP, Material.IRON_SWORD, "Combat Log", "Quitting right after PvP kills the player.", "combat-log"),
+                new Feature(Category.PVP, Material.IRON_SWORD, "Combat", "Combat timer, command blocking, safe zone.", "combat.enabled",
+                        (p, back) -> Menus.combat(plugin, p, back).open())
+                        .hint("/smp combat seconds <n>|Combat time (default 20)", "/smp safezone add <name> <radius>|Safe zone where you stand"),
                 sw(Category.PVP, Material.DIAMOND_SWORD, "Disable PvP", "No damage between players.", "pvp-off"),
                 sw(Category.PVP, Material.LEATHER_CHESTPLATE, "Naked Protection", "Players with no armor can't be hit by players.", "naked-protection"),
                 new Feature(Category.PVP, Material.CLOCK, "Grace", "Resistance IV, Saturation and a 30:00 clock.", "grace.enabled",
@@ -109,6 +111,8 @@ public final class Features {
                         (p, back) -> new TempBanGuis.PlayerPicker(plugin, p, back).open()),
                 new Feature(Category.ADMIN, Material.WRITABLE_BOOK, "Chat Moderation", "Filters, mentions, messages, sounds.", "chat.enabled",
                         (p, back) -> Menus.chat(plugin, p, back).open()),
+                new Feature(Category.ADMIN, Material.BELL, "Announcements", "Animated title, chat line and sounds.", "announce.enabled", null)
+                        .hint("/announce <message>|Title + chat + sounds for everyone", "/broadcast <message>|Chat only, no title"),
                 new Feature(Category.ADMIN, Material.FILLED_MAP, "Xaero Minimap", "", null, null, xaero(plugin)),
                 new Feature(Category.ADMIN, Material.SKELETON_SKULL, "Death Ban", "", "death-ban.enabled", null, deathBan()),
                 new Feature(Category.ADMIN, Material.DRAGON_HEAD, "Dragon Health", "Set the Ender Dragon's health.", "dragon-health.enabled",
@@ -138,6 +142,8 @@ public final class Features {
                 sw(Category.WORLD, Material.BEDROCK, "Void Protection", "Players who fall into the void are lifted back up.", "void-protection"),
                 sw(Category.WORLD, Material.COBWEB, "Cobweb Decay", "Placed cobwebs disappear after a few seconds.", "cobweb-decay"),
                 // Util
+                new Feature(Category.WORLD, Material.COMPASS, "Random TP", "New players start at a random spot.", "random-tp.enabled",
+                        (p, back) -> new Menus.RandomTp(plugin, p, back).open()),
                 new Feature(Category.UTIL, Material.EMERALD, "Insta Restock", "Villagers and wandering traders restock instantly.", "instarestock.enabled", null),
                 sw(Category.UTIL, Material.ANVIL, "No \"Too Expensive\"", "Removes the anvil level cap.", "anvil-no-limit"),
                 sw(Category.UTIL, Material.NOTE_BLOCK, "Kill Sound", "Killers hear a sound on every player kill.", "kill-sound"),

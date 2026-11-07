@@ -57,6 +57,29 @@ public final class Theme {
         return "<color:" + hex + ">" + text + "</color>";
     }
 
+    /** Dark - light - dark gradients, one hue each, used for the feature names in the main menu. */
+    private static final String[][] HUES = {
+            {"#00D0FF", "#C4EEFF"}, {"#00D060", "#C4FFDE"}, {"#FF3B5C", "#FFC4D0"}, {"#FF8A00", "#FFE0B8"}, {"#FFD000", "#FFF3B8"},
+            {"#A855FF", "#E8D0FF"}, {"#FF4FA3", "#FFC4E3"}, {"#3B6BFF", "#C4D4FF"}, {"#00D0B0", "#C4FFF4"}, {"#8CFF00", "#E6FFC4"}};
+
+    private static final String SC_FROM = "abcdefghijklmnopqrstuvwxyz";
+    private static final String SC_TO = "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢ";
+
+    /** "Random TP" -> "ʀᴀɴᴅᴏᴍ ᴛᴘ" (Unicode has no small-cap x, so x stays as it is). */
+    public static String smallCaps(String s) {
+        StringBuilder b = new StringBuilder(s.length());
+        for (char c : s.toLowerCase().toCharArray()) {
+            int i = SC_FROM.indexOf(c);
+            b.append(i >= 0 ? SC_TO.charAt(i) : c);
+        }
+        return b.toString();
+    }
+
+    public static String hue(int i, Object text) {
+        String[] h = HUES[Math.floorMod(i, HUES.length)];
+        return "<gradient:" + h[0] + ":" + h[1] + ":" + h[0] + ">" + text + "</gradient>";
+    }
+
     /** Palette gradient for any piece of text (names, headings). */
     public static String grad(Object text) { return "<gradient:" + BRIGHT + ":" + SOFT + ">" + text + "</gradient>"; }
 

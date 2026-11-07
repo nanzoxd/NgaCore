@@ -8,6 +8,7 @@ import me.smpcore.SMPCore;
 import me.smpcore.module.CooldownModule;
 import me.smpcore.module.DamageLimiterModule;
 import me.smpcore.module.EnchantModule;
+import me.smpcore.module.ItemBanModule;
 import me.smpcore.module.WeaponWhitelist;
 import me.smpcore.module.NetheriteBanModule;
 import me.smpcore.module.PotionModule;
@@ -59,7 +60,8 @@ public final class Menus {
                 new ToggleMenu.Toggle(Material.BARRIER, "Item ban", "item-ban.enabled", "Master switch for the item ban list."),
                 new ToggleMenu.Toggle(Material.HOPPER, "Remove from inventories", "item-ban.remove-from-inventories", "Banned items are deleted every 5 seconds."),
                 new ToggleMenu.Toggle(Material.IRON_SWORD, "Block use", "item-ban.block-use", "Right-clicking a banned item does nothing."),
-                new ToggleMenu.Toggle(Material.GRASS_BLOCK, "Block placing", "item-ban.block-placing", "Banned blocks can't be placed.")), parent);
+                new ToggleMenu.Toggle(Material.GRASS_BLOCK, "Block placing", "item-ban.block-placing", "Banned blocks can't be placed."),
+                new ToggleMenu.Toggle(Material.CHEST, "Block chests", "item-ban.block-containers", "Banned items can't be put into or taken out of chests, hoppers and so on.")), parent);
     }
 
     public static Gui grace(SMPCore plugin, Player p, Supplier<Gui> parent) {
@@ -70,6 +72,29 @@ public final class Menus {
                 new ToggleMenu.Toggle(Material.OAK_SIGN, "Scoreboard", "grace.scoreboard.enabled", "Sidebar clock: Grace 30:00."),
                 new ToggleMenu.Toggle(Material.PLAYER_HEAD, "Every join", "grace.on-join", "Every player gets a fresh grace period each time they join."),
                 new ToggleMenu.Toggle(Material.TOTEM_OF_UNDYING, "After respawn", "grace.on-respawn", "Grace starts again after every death.")), parent);
+    }
+
+    public static Gui combat(SMPCore plugin, Player p, Supplier<Gui> parent) {
+        return new ToggleMenu(plugin, p, "Combat", List.of(
+                new ToggleMenu.Toggle(Material.IRON_SWORD, "Combat", "combat.enabled", "Master switch. Timer: combat.seconds (/smp combat seconds <n>)."),
+                new ToggleMenu.Toggle(Material.SKELETON_SKULL, "Logout penalty", "combat.logout.punish", "Logging out in combat kills the player."),
+                new ToggleMenu.Toggle(Material.COMMAND_BLOCK, "Command blocking", "combat.commands.enabled", "Block the commands in combat.commands (blacklist or whitelist)."),
+                new ToggleMenu.Toggle(Material.BEACON, "Safe zone", "combat.safe-zone.enabled", "Spawn area and /smp safezone zones."),
+                new ToggleMenu.Toggle(Material.SHIELD, "Safe zone: no PvP", "combat.safe-zone.block-pvp", "Players inside can't hit or be hit."),
+                new ToggleMenu.Toggle(Material.IRON_DOOR, "Safe zone: closed in combat", "combat.safe-zone.block-entry", "Tagged players can't walk or pearl in."),
+                new ToggleMenu.Toggle(Material.GRASS_BLOCK, "Auto: WorldGuard regions", "combat.safe-zone.auto.worldguard", "Every region with pvp: deny is a safe zone."),
+                new ToggleMenu.Toggle(Material.BELL, "Safe zone messages", "combat.safe-zone.auto.notify", "Tell players when they enter or leave a safe zone."),
+                new ToggleMenu.Toggle(Material.CLOCK, "Rejoin time", "combat.rejoin.enabled", "Disconnect in combat? Rejoin within combat.rejoin.seconds or be killed."),
+                new ToggleMenu.Toggle(Material.NAME_TAG, "Combat titles", "combat.titles", "Big text when combat starts and when you are out of combat.")), parent);
+    }
+
+    public static Gui spawn(SMPCore plugin, Player p, Supplier<Gui> parent) {
+        return new ToggleMenu(plugin, p, "Spawn & Warp Settings", List.of(
+                new ToggleMenu.Toggle(Material.NETHER_STAR, "Spawn", "spawn.enabled", "/spawn and /setspawn. Wait time: spawn.delay-seconds (/smp spawn delay <seconds>)."),
+                new ToggleMenu.Toggle(Material.ENDER_PEARL, "Warps", "warps.enabled", "/warp, /warps, /setwarp and /delwarp."),
+                new ToggleMenu.Toggle(Material.LEATHER_BOOTS, "Cancel on move", "spawn.cancel-on-move", "Moving cancels the waiting teleport."),
+                new ToggleMenu.Toggle(Material.IRON_SWORD, "Cancel on damage", "spawn.cancel-on-damage", "Taking damage cancels it too."),
+                new ToggleMenu.Toggle(Material.RED_BED, "Respawn at spawn", "spawn.respawn-at-spawn", "Players without a bed or anchor respawn at /spawn.")), parent);
     }
 
     public static Gui deathBan(SMPCore plugin, Player p, Supplier<Gui> parent) {
@@ -145,7 +170,12 @@ public final class Menus {
 
     // ------------------------------------------------------------------ item ban list
 
-    public static final class ItemBanList extends PagedGui<Material> {
+    /**
+     * Item Ban: click the hopper with an item on your cursor and it is banned. Left click bans that exact item
+     * (an enchanted book, a potion, a named item; plain items ban the whole type), right click or shift bans the whole
+     * type. Click a banned entry to allow it again.
+     */
+    public static final class ItemBanList extends PagedGui<ItemBanModule.Entry> {
         private final Supplier<Gui> parent;
 
         public ItemBanList(SMPCore plugin, Player viewer, Supplier<Gui> parent) {
@@ -155,33 +185,62 @@ public final class Menus {
 
         @Override protected Supplier<Gui> parent() { return parent; }
 
-        @Override protected List<Material> entries() {
-            List<Material> l = new ArrayList<>(plugin.itemBan.banned());
-            l.sort(Comparator.comparing(Enum::name));
-            return l;
+        @Override protected List<ItemBanModule.Entry> entries() { return plugin.itemBan.entries(); }
+
+        @Override protected ItemStack icon(ItemBanModule.Entry en) {
+            List<String> lore = new ArrayList<>();
+            if (en.item() == null) {
+                lore.add(Theme.c(Theme.DIM, "Banned: ") + Theme.red("the whole item type"));
+                lore.add(Theme.c(Theme.MID, "Every variant, enchanted or not."));
+                lore.add(" ");
+                lore.add(Lore.left() + " " + Lore.key(true) + " " + Theme.c(Theme.DIM, "to Allow again"));
+                return Items.of(en.material()).name(Theme.red(Theme.pretty(en.material().name()))).lore(lore).glow(true).build();
+            }
+            // an exact item keeps its own look (glint, potion colour ...) and gets the ban lines added
+            ItemStack it = en.item().clone();
+            var meta = it.getItemMeta();
+            List<net.kyori.adventure.text.Component> l = meta.lore() == null ? new ArrayList<>() : new ArrayList<>(meta.lore());
+            l.add(Theme.parse(" "));
+            l.add(Theme.parse(Theme.c(Theme.DIM, "Banned: ") + Theme.red("this exact item")));
+            l.add(Theme.parse(Theme.c(Theme.MID, "Other variants stay allowed.")));
+            l.add(Theme.parse(" "));
+            l.add(Theme.parse(Lore.left() + " " + Lore.key(true) + " " + Theme.c(Theme.DIM, "to Allow again")));
+            meta.lore(l);
+            it.setItemMeta(meta);
+            return it;
         }
 
-        @Override protected ItemStack icon(Material m) {
-            return Items.of(m).name(Theme.red(Theme.pretty(m.name())))
-                    .lore(Theme.blue("Click") + " to allow again").glow(true).build();
+        @Override protected void onClick(ItemBanModule.Entry en, InventoryClickEvent e) {
+            plugin.itemBan.remove(en);
+            refresh();
         }
 
-        @Override protected void onClick(Material m, InventoryClickEvent e) {
-            plugin.itemBan.set(m, false);
+        private void ban(ItemStack it, boolean wholeType) {
+            if (it == null || it.getType().isAir()) {
+                Msg.send(viewer, "Put an item on your cursor first, then click the hopper.");
+                return;
+            }
+            boolean exactBan = plugin.itemBan.ban(it, wholeType);
+            Msg.send(viewer, "Banned " + (exactBan ? Theme.yellow("this exact " + Theme.pretty(it.getType().name())) : Theme.yellow("every " + Theme.pretty(it.getType().name())))
+                    + ". " + Theme.c(Theme.DIM, "Players can't pick it up, store it or take it from chests."));
             refresh();
         }
 
         @Override protected void extra() {
-            set(46, Items.of(Material.HOPPER).name("Ban held item")
-                    .lore("Hold an item and click here.", "Or use " + Theme.blue("/smp itemban add") + ".").build(), e -> {
-                Material m = viewer.getInventory().getItemInMainHand().getType();
-                if (m.isAir()) {
-                    Msg.send(viewer, "Hold the item you want to ban.");
-                    return;
-                }
-                plugin.itemBan.set(m, true);
-                refresh();
+            // top middle: click with an item on the cursor (or in your hand)
+            set(4, Items.of(Material.HOPPER).name(Theme.green("Ban an item"))
+                    .lore(Theme.c(Theme.DIM, "Put an item on your cursor,"), Theme.c(Theme.DIM, "then click here. Or hold it."),
+                            Theme.c(Theme.MID, "Works for enchanted books, potions,"), Theme.c(Theme.MID, "named items, anything."), " ",
+                            Lore.left() + " " + Lore.key(true) + " " + Theme.c(Theme.DIM, "this exact item"),
+                            Lore.right() + " " + Lore.key(false) + " " + Theme.c(Theme.DIM, "the whole item type"),
+                            Theme.c(Theme.MID, "Plain items always ban the whole type.")).glow(true).build(), e -> {
+                ItemStack it = e.getCursor();
+                if (it == null || it.getType().isAir()) it = viewer.getInventory().getItemInMainHand();
+                ban(it, e.isRightClick() || e.isShiftClick());
             });
+            set(46, Items.of(Material.NAME_TAG).name("Ban held item")
+                    .lore(Theme.c(Theme.DIM, "Hold an item and click here."), Theme.c(Theme.MID, "Same as the hopper, exact item."),
+                            Theme.c(Theme.MID, "Or use " + Theme.blue("/smp itemban add") + ".")).build(), e -> ban(viewer.getInventory().getItemInMainHand(), false));
             set(51, Items.of(Material.COMPARATOR).name("Options").build(),
                     e -> itemBanOptions(plugin, viewer, () -> this).open());
         }
@@ -288,6 +347,41 @@ public final class Menus {
                     Msg.send(viewer, "Whitelisted " + Theme.yellow(Theme.esc(r.label())) + ".");
                 }
                 refresh();
+            });
+        }
+    }
+
+    /** Random TP settings: switch, radius, and a test button. */
+    public static final class RandomTp extends Gui {
+        private final Supplier<Gui> parent;
+
+        public RandomTp(SMPCore plugin, Player viewer, Supplier<Gui> parent) {
+            super(plugin, viewer, 4, "Random TP");
+            this.parent = parent;
+        }
+
+        @Override protected void build() {
+            border();
+            backButton(parent);
+            int radius = plugin.getConfig().getInt("random-tp.radius", 5000);
+            toggleButton(11, Material.LEVER, "Random TP", "random-tp.enabled", "Random spot for new players.");
+            set(13, Items.of(Material.COMPASS).name("Radius")
+                    .lore(Theme.c(Theme.DIM, "Now: ") + Theme.yellow(radius) + Theme.c(Theme.DIM, " blocks"),
+                            Theme.c(Theme.MID, "Furthest a player can be sent."),
+                            Lore.inc(), Lore.dec(), Theme.yellow("Shift") + " " + Theme.c(Theme.DIM, "Change by 200")).build(), e -> {
+                int step = e.isShiftClick() ? 200 : 500;
+                int now = plugin.getConfig().getInt("random-tp.radius", 5000);
+                if (e.isLeftClick()) now += step;
+                else if (e.isRightClick()) now -= step;
+                else return;
+                plugin.getConfig().set("random-tp.radius", Math.max(100, Math.min(now, 1_000_000)));
+                plugin.saveConfig();
+                refresh();
+            });
+            set(15, Items.of(Material.ENDER_PEARL).name(Theme.green("Test it"))
+                    .lore(Theme.c(Theme.DIM, "Sends you to a random spot now."), Lore.left() + " " + Lore.key(true) + " " + Theme.c(Theme.DIM, "to Teleport")).build(), e -> {
+                viewer.closeInventory();
+                plugin.randomTp.teleport(viewer, true);
             });
         }
     }

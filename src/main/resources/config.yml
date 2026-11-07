@@ -46,7 +46,9 @@ item-ban:
   remove-from-inventories: true   # scan inventories every 5s and delete banned items
   block-use: true
   block-placing: true
-  banned: []
+  block-containers: true          # banned items can't be put into or taken out of chests, hoppers and so on
+  banned: []                      # whole item types
+  exact: []                       # exact items (enchanted books, potions, named items), managed in the menu
   whitelist: []                   # custom weapons allowed even if their base item is banned (managed in the menu)
   message: "That item is <#FF5555>banned</#FF5555> on this server."
 
@@ -67,6 +69,62 @@ instarestock:
   cooldown-seconds: 0             # 0 = instant every time
   villager-blacklist: []          # professions to skip, e.g. [librarian]
 
+# ── Combat (/smp -> PVP -> Combat) ────────────────────────────
+# Hitting or being hit by a player starts the timer. Action bar: "🕛 ᴄᴏᴍʙᴀᴛ : 20" in the [MSG] red (#850120).
+# While it runs: blocked commands are refused, logging out kills you, and you can't walk into a safe zone.
+# Players in a safe zone can't hit or be hit by other players. Bypass: smpcore.bypass.combat
+combat:
+  enabled: true
+  seconds: 20                    # change in game with /smp combat seconds <n>
+  commands:
+    enabled: true
+    mode: blacklist              # blacklist = block the "blocked" list, whitelist = block everything except "allowed"
+    blocked: [spawn, warp, warps, home, homes, rtp, tpa, tpahere, tpaccept, tpacancel, back, ec, enderchest, vanish, v, logout]
+    allowed: [msg, tell, w, whisper, pm, reply, r]
+  logout:
+    punish: true                 # logging out while tagged
+    kill: true                   # kill the player (items drop)
+    broadcast: true
+    exempt-kick: true            # staff kicks are not punished
+  safe-zone:
+    enabled: true
+    spawn-radius: 25             # blocks around /spawn that are safe (0 = off). Set with /smp safezone spawn <radius>
+    block-pvp: true              # no player damage in a safe zone
+    block-entry: true            # tagged players can't walk, pearl or chorus into a safe zone
+    zones: {}                    # made with /smp safezone add <name> <radius> (where you stand)
+    auto:                        # safe zones that are set up automatically
+      worldguard: true           # every WorldGuard region with the flag pvp: deny is a safe zone (needs WorldGuard)
+      warps-radius: 0            # make every /setwarp spot a safe zone with this radius (0 = off)
+      notify: true               # tell players when they enter or leave a safe zone
+  rejoin:                        # "rejoin time": a player who disconnects in combat gets a while to log back in
+    enabled: false               #   in time: no penalty. Too late: killed (when they next join, see README), items drop where they logged out
+    seconds: 30                  #   how long they have (change with /smp combat rejoin <seconds>)
+    retag: true                  #   returning players are tagged again for the combat time they had left
+    broadcast: true              #   announce the disconnect and when time runs out
+  titles: true                   # show the big title text for tagged / ended
+  messages:
+    bar: "<#850120>🕛 ᴄᴏᴍʙᴀᴛ : <time>"
+    tagged: "<#9babc7>You are in <#850120>combat</#850120>. <#FF5555>Don't log out.</#FF5555>"
+    ended: "<#9babc7>You are <#55FF7F>out of combat</#55FF7F>. <#9babc7>You can use commands again."
+    rejoin-quit: "<#FF5555><player> <#9babc7>disconnected in <#850120>combat</#850120>. They have <#FFE45C><time>s</#FFE45C> to rejoin"
+    rejoin-expired: "<#FF5555><player> <#9babc7>did not rejoin in time <#850120>(combat logout)"
+    rejoin-ok: "<#9babc7>Welcome back! You rejoined in time, <#55FF7F>no penalty</#55FF7F>. <#850120>Combat</#850120> <#9babc7>resumes for <#FFE45C><time>s"
+    rejoin-ok-title: "<#55FF7F><bold>ʏᴏᴜ ʀᴇᴊᴏɪɴᴇᴅ ɪɴ ᴛɪᴍᴇ"
+    rejoin-ok-subtitle: "<#9babc7>No penalty"
+    rejoin-late: "<#9babc7>You did not rejoin in time after disconnecting in <#850120>combat</#850120> <#9babc7>and were <#FF5555>killed</#FF5555>."
+    rejoin-late-title: "<#FF5555><bold>ᴄᴏᴍʙᴀᴛ ʟᴏɢᴏᴜᴛ"
+    rejoin-late-subtitle: "<#9babc7>You did not come back in time"
+    ended-title: "<#55FF7F><bold>ᴏᴜᴛ ᴏꜰ ᴄᴏᴍʙᴀᴛ"
+    ended-subtitle: "<#9babc7>You are safe now"
+    tagged-title: "<#850120><bold>ɪɴ ᴄᴏᴍʙᴀᴛ"
+    tagged-subtitle: "<#FF5555>Don't log out"
+    safe-enter: "<#55FF7F>You entered a safe zone <#9babc7>· PvP is off here"
+    safe-leave: "<#FF5555>You left the safe zone <#9babc7>· PvP is on"
+    command: "<#FF5555>/<command></#FF5555> <#9babc7>is blocked in combat.</#9babc7> <#FFAA33><time>s</#FFAA33> <#9babc7>left."
+    logout: "<#FF5555><player></#FF5555> <#9babc7>logged out in</#9babc7> <#850120>combat</#850120><#9babc7>."
+    safe-entry: "<#9babc7>The safe zone is <#FF5555>closed</#FF5555> <#9babc7>while you are in combat.</#9babc7> <#FFAA33><time>s</#FFAA33> <#9babc7>left."
+    safe-pvp: "<#9babc7>PvP is <#FF5555>off</#FF5555> <#9babc7>in the safe zone."
+
 # ── Grace (switch in /smp -> PVP -> Grace) ───────────────────
 # Resistance IV + Saturation for 30 minutes and a sidebar clock "🕛 Grace / 30:00".
 # The clock is green, then yellow, orange and red as time runs out.
@@ -79,6 +137,41 @@ grace:
   resistance: { enabled: true, level: 4 }
   saturation: { enabled: true }
   scoreboard: { enabled: true, icon: "🕛", title: "ɢʀᴀᴄᴇ", pad: 3 }   # small-caps title, time centred with pad spaces
+
+# ── Spawn and warps (/spawn /setspawn /warp /warps /setwarp /delwarp) ──
+warps:
+  enabled: true                  # /warp /warps /setwarp /delwarp (switch in /smp -> Util -> Warps)
+spawn:
+  enabled: true                  # /spawn /setspawn (switch in /smp -> Util -> Spawn)
+  delay-seconds: 5               # how many seconds players wait before teleporting (0 = instant)
+  cancel-on-move: true           # moving cancels the teleport
+  cancel-on-damage: true         # taking damage cancels it too
+  respawn-at-spawn: false        # respawn at /spawn when the player has no bed or anchor
+
+# ── Random TP on first join ──────────────────────────────────
+# New players (first join only) are sent to a random safe spot within radius blocks of the centre.
+random-tp:
+  enabled: false
+  radius: 5000
+  center: spawn                  # spawn, world (the world spawn) or "x,z" such as "0,0"
+  world: ""                      # blank = the main world
+  tries: 30                      # spots to try before giving up (new players then stay where they are)
+
+# ── Staff tools (/vanish /freeze /invsee /endersee) ───────────
+# Vanish hides you from players, the tab list, name completion, the server list, /list and join/leave messages.
+# Players with smpcore.vanish.see still see vanished staff.
+staff:
+  vanish:
+    enabled: true
+  freeze:
+    enabled: true
+    bar: "You are frozen. Don't log out."
+    subtitle: "A staff member is checking you. Don't log out."
+    message: "Don't log out or you may be banned."
+    allowed-commands: [msg, reply, r, w]
+    quit-command: ""             # run when a frozen player logs out, e.g. "tempban ban <player> 7d Left while frozen"
+  invsee:
+    enabled: true
 
 # ── Potion limiter ────────────────────────────────────────────
 # effects: -1 = unlimited, 0 = banned, n = max level allowed (1 = level I)
@@ -191,6 +284,39 @@ chat:
     pm-sent:         { sound: "block.note_block.bell",  volume: 0.4, pitch: 1.9 }
     blocked:         { sound: "block.vault.insert_item_fail", volume: 1.0, pitch: 1.0 }
 
+# ── Announcements ─────────────────────────────────────────────
+# /announce <message>  animated title + message under it + chat line + title sounds
+# /broadcast <message> chat line only (no title), with its own sound
+# A subtitle is one line in Minecraft, so a long message is word-wrapped (wrap-chars) and the lines
+# are shown one after another under the title, page-seconds each. The full text is always in chat.
+announce:
+  enabled: true
+  title: "ᴀɴɴᴏᴜɴᴄᴇᴍᴇɴᴛ"
+  # colour preset: in /smp -> Administrator -> Announcements press Q (next) or Ctrl+Q (previous) over the bell.
+  # gradient = title and chat label (first to last letter), text = message under the title and in chat.
+  # Add your own below, any name.
+  preset: ice
+  presets:
+    ice:     { gradient: ["#00EEFF", "#D5FBFF", "#D5FBFF"], text: "#D5FBFF" }
+    gold:    { gradient: ["#FFB300", "#FFF1B8", "#FFF1B8"], text: "#FFF1B8" }
+    crimson: { gradient: ["#FF2A4D", "#FFC9D2", "#FFC9D2"], text: "#FFC9D2" }
+    emerald: { gradient: ["#00E676", "#CCFFE3", "#CCFFE3"], text: "#CCFFE3" }
+    violet:  { gradient: ["#A855FF", "#EBD6FF", "#EBD6FF"], text: "#EBD6FF" }
+    sunset:  { gradient: ["#FF5E62", "#FF9966", "#FFF0C2"], text: "#FFF0C2" }
+    royal:   { gradient: ["#3B6BFF", "#C4D4FF", "#C4D4FF"], text: "#C4D4FF" }
+  glint: { enabled: true, period-ticks: 50, width: 0.22 }   # white shine sweeping over the title
+  wrap-chars: 32
+  page-seconds: 4.0
+  chat-format: "<label> <#9babc7>→ <message>"          # <label> = title gradient, <message> = text colour
+  broadcast-format: "<label> <#9babc7>→ <message>"
+  # played one after another when /announce runs; delay is in ticks (20 = 1 second). Add as many as you like.
+  title-sounds:
+    - { sound: "block.beacon.activate",   volume: 1.0, pitch: 1.4, delay: 0 }
+    - { sound: "block.note_block.chime",  volume: 1.0, pitch: 1.6, delay: 6 }
+    - { sound: "entity.player.levelup",   volume: 0.7, pitch: 1.3, delay: 12 }
+  # played by /broadcast (chat only)
+  broadcast-sound: { sound: "block.note_block.pling", volume: 1.0, pitch: 1.5 }
+
 # ── Xaero's Minimap / World Map ───────────────────────────────
 # Replaces XaeroForceDisabler (remove that plugin). Toggle both in /smp -> Xaero Minimap.
 #   fair-mode: Xaero "fair play" (radar, cave mode etc. off)    disable: minimap and world map off
@@ -232,8 +358,6 @@ tweaks:
   naked-protection: false
   afk-protection: false
   afk-seconds: 120
-  combat-log: false
-  combat-seconds: 15
   pvp-off: false
   ban-tipped-arrows: false
   disable-vaults: false

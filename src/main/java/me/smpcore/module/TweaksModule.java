@@ -55,7 +55,6 @@ import org.bukkit.potion.PotionEffect;
 public final class TweaksModule implements Listener, CommandExecutor {
     private final SMPCore plugin;
     private final Map<UUID, Long> lastMove = new ConcurrentHashMap<>();
-    private final Map<UUID, Long> lastCombat = new ConcurrentHashMap<>();
     private final Set<UUID> pvpOff = ConcurrentHashMap.newKeySet();
 
     public TweaksModule(SMPCore plugin) {
@@ -215,21 +214,12 @@ public final class TweaksModule implements Listener, CommandExecutor {
             Msg.bar(a, "That player has " + Theme.yellow("no armor") + " and is " + Theme.red("protected") + ".");
             return;
         }
-        long now = System.currentTimeMillis();
-        lastCombat.put(a.getUniqueId(), now);
-        lastCombat.put(v.getUniqueId(), now);
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
         Player p = e.getPlayer();
-        Long t = lastCombat.remove(p.getUniqueId());
         lastMove.remove(p.getUniqueId());
-        long window = (long) (plugin.getConfig().getDouble("tweaks.combat-seconds", 15) * 1000);
-        if (on("combat-log") && t != null && System.currentTimeMillis() - t < window && !bypass(p)) {
-            p.setHealth(0.0);
-            Bukkit.broadcast(Msg.body(Theme.red(p.getName()) + " logged out in combat."));
-        }
     }
 
     @EventHandler(ignoreCancelled = true)

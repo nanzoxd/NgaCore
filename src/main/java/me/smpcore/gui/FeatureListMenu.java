@@ -31,9 +31,6 @@ public final class FeatureListMenu extends PagedGui<Feature> {
 
     @Override protected Supplier<Gui> parent() { return parent; }
 
-    /** One extra glass layer under the category tabs, so the tabs and the items are clearly apart. */
-    @Override protected int gridTop() { return 2; }
-
     @Override protected List<Feature> entries() {
         String q = query.toLowerCase();
         return source.get().stream()
@@ -51,15 +48,41 @@ public final class FeatureListMenu extends PagedGui<Feature> {
         };
     }
 
-    private void tab(int slot, Category c, Material icon, String label) {
-        boolean sel = cat == c;
-        long n = source.get().stream().filter(f -> c == null || f.cat() == c).count();
-        set(slot, Items.of(icon).name(sel ? Theme.green(label) : label)
-                .lore(Theme.yellow(n) + " features", sel ? Theme.c(Theme.DIM, "Showing now") : Lore.open())
-                .glow(sel).build(), e -> {
-            cat = c;
-            resetPage();
-            refresh();
+    /** Order the nether star cycles through (null = every feature). */
+    private static final Category[] CYCLE = {null, Category.PVP, Category.ADMIN, Category.WORLD, Category.UTIL};
+
+    private static String label(Category c) {
+        return c == null ? "All" : c.label;
+    }
+
+    private long count(Category c) {
+        return source.get().stream().filter(f -> c == null || f.cat() == c).count();
+    }
+
+    /** Left click = next category, right click = previous one. */
+    private void cycle(boolean forward) {
+        int i = 0;
+        for (int k = 0; k < CYCLE.length; k++) if (CYCLE[k] == cat) i = k;
+        cat = CYCLE[Math.floorMod(i + (forward ? 1 : -1), CYCLE.length)];
+        resetPage();
+        refresh();
+    }
+
+    /** Slot 1 of the top row: one nether star that cycles through all the categories. */
+    private void categoryButton() {
+        List<String> lore = new java.util.ArrayList<>();
+        lore.add(Theme.c(Theme.DIM, "Showing: ") + Theme.green(label(cat)));
+        lore.add(" ");
+        for (Category c : CYCLE) {
+            String line = c == cat ? Theme.green("▸ " + label(c)) : Theme.c(Theme.MID, "  " + label(c));
+            lore.add(line + " " + Theme.yellow(count(c)));
+        }
+        lore.add(" ");
+        lore.add(Lore.left() + " " + Lore.key(true) + " " + Theme.c(Theme.DIM, "Next category"));
+        lore.add(Lore.right() + " " + Lore.key(false) + " " + Theme.c(Theme.DIM, "Previous category"));
+        set(0, Items.of(Material.NETHER_STAR).name("Categories").lore(lore).glow(cat != null).build(), e -> {
+            if (e.isRightClick()) cycle(false);
+            else if (e.isLeftClick()) cycle(true);
         });
     }
 
@@ -78,10 +101,65 @@ public final class FeatureListMenu extends PagedGui<Feature> {
         } else {
             lore = List.of(Lore.open(), Lore.opt("Status", on(f), false));
         }
-        return Items.of(f.icon()).name(f.name()).lore(lore).glow(on(f)).build();
+        if ("combat.enabled".equals(f.path())) {
+            lore = new java.util.ArrayList<>(lore);
+            lore.add(" ");
+            lore.add(Theme.yellow("Q") + " " + Theme.c(Theme.DIM, "Rejoin time:") + " " + Theme.state(cfg().getBoolean("combat.rejoin.enabled")));
+            lore.add(Theme.c(Theme.MID, "  Disconnect in combat? Log back in within " + plugin.combat.rejoinSeconds() + "s"));
+            lore.add(Theme.c(Theme.MID, "  or be killed. /smp combat rejoin <seconds>"));
+        }
+        if (!f.hints().isEmpty()) {
+            lore = new java.util.ArrayList<>(lore);
+            lore.add(" ");
+            lore.add(Theme.c(Theme.MID, "Commands"));
+            for (String h : f.hints()) {
+                String[] p = h.split("\\|", 2);
+                lore.add(Theme.yellow(Theme.esc(p[0])) + (p.length > 1 ? " " + Theme.c(Theme.DIM, p[1]) : ""));
+            }
+        }
+        if ("announce.enabled".equals(f.path())) {
+            lore = new java.util.ArrayList<>(lore);
+            lore.add(" ");
+            String cur = plugin.announce.presetName();
+            StringBuilder row = new StringBuilder(Theme.c(Theme.DIM, "Colour: "));
+            boolean first = true;
+            for (String n : plugin.announce.presetNames()) {
+                if (!first) row.append(Theme.c(Theme.MID, " | "));
+                first = false;
+                row.append(n.equals(cur) ? Theme.c(plugin.announce.presetHex(n), Theme.pretty(n)) : Theme.c(Theme.MID, Theme.pretty(n)));
+            }
+            lore.add(row.toString());
+            lore.add(Theme.yellow("Q") + " " + Theme.c(Theme.DIM, "next") + Theme.c(Theme.MID, " | ") + Theme.yellow("Ctrl+Q") + " " + Theme.c(Theme.DIM, "previous"));
+        }
+        int hue = 0;
+        if (!f.name().equals("Random TP")) {
+            List<Feature> all = source.get();
+            for (int i = 0; i < all.size(); i++) {
+                if (all.get(i).name().equals(f.name())) {
+                    hue = i + 1;
+                    break;
+                }
+            }
+        }
+        return Items.of(f.icon()).name(Theme.hue(hue, Theme.esc(Theme.smallCaps(f.name())))).lore(lore).glow(on(f)).build();
     }
 
     @Override protected void onClick(Feature f, InventoryClickEvent e) {
+        if ("combat.enabled".equals(f.path()) && e.getClick() == org.bukkit.event.inventory.ClickType.DROP) {
+            cfg().set("combat.rejoin.enabled", !cfg().getBoolean("combat.rejoin.enabled"));
+            save();
+            refresh();
+            return;
+        }
+        if ("announce.enabled".equals(f.path())) {
+            var click = e.getClick();
+            if (click == org.bukkit.event.inventory.ClickType.DROP || click == org.bukkit.event.inventory.ClickType.CONTROL_DROP) {
+                plugin.announce.cyclePreset(click == org.bukkit.event.inventory.ClickType.DROP ? 1 : -1);
+                plugin.announce.preview(viewer);
+                refresh();
+                return;
+            }
+        }
         if (f.custom() != null) {
             if (!e.isLeftClick() && !e.isRightClick()) return;
             f.custom().click(cfg(), e.isLeftClick());
@@ -100,16 +178,14 @@ public final class FeatureListMenu extends PagedGui<Feature> {
     }
 
     @Override protected void extra() {
-        // second glass layer (row 1) separates the tabs from the item grid
-        ItemStack glass = Items.of(Material.GRAY_STAINED_GLASS_PANE).name(" ").build();
-        for (int i = 10; i <= 16; i++) set(i, glass);
-        set(13, Items.of(accent()).name(" ").build());
-        // category tabs replace the glass in the top row
-        tab(1, null, Material.NETHER_STAR, "All");
-        tab(2, Category.PVP, Category.PVP.icon, Category.PVP.label);
-        tab(3, Category.ADMIN, Category.ADMIN.icon, Category.ADMIN.label);
-        tab(5, Category.WORLD, Category.WORLD.icon, Category.WORLD.label);
-        tab(6, Category.UTIL, Category.UTIL.icon, Category.UTIL.label);
+        // top row: nether star (first slot) cycles the categories, command block (ninth slot) lists every command
+        categoryButton();
+        set(8, Items.of(Material.COMMAND_BLOCK).name("Commands")
+                .lore(Theme.c(Theme.MID, "Every command in one list,"),
+                        Theme.c(Theme.MID, "like /vanish, /spawn and /warp."),
+                        Theme.yellow(CommandsMenu.all(plugin).size()) + " " + Theme.c(Theme.DIM, "commands"),
+                        Lore.open()).build(),
+                e -> new CommandsMenu(plugin, viewer, () -> this).open());
         set(46, Items.of(Material.SPYGLASS).name("Search")
                 .lore(query.isEmpty() ? "Find a feature by name." : "Showing " + Theme.blue(Theme.esc(query))).build(), e -> {
             viewer.closeInventory();

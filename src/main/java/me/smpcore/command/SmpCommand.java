@@ -34,6 +34,10 @@ public final class SmpCommand implements TabExecutor {
             case "itemban" -> itemBan(s, a);
             case "grace" -> grace(s, a);
             case "whitelist" -> whitelist(s, a);
+            case "spawn" -> spawnCfg(s, a);
+            case "rtp" -> rtp(s, a);
+            case "combat" -> combat(s, a);
+            case "safezone" -> safezone(s, a);
             default -> {
                 Msg.send(s, Theme.blue("/smp") + " open the settings menu");
                 Msg.send(s, Theme.blue("/smp reload") + "   " + Theme.blue("/smp itemban") + " <add|remove|list> [material]");
@@ -94,6 +98,96 @@ public final class SmpCommand implements TabExecutor {
         }
     }
 
+    /** /smp rtp [player]: random teleport (test). */
+    private void rtp(CommandSender s, String[] a) {
+        Player t = a.length > 1 ? org.bukkit.Bukkit.getPlayerExact(a[1]) : (s instanceof Player p ? p : null);
+        if (t == null) {
+            Msg.send(s, "Usage " + Theme.blue("/smp rtp [player]"));
+            return;
+        }
+        plugin.randomTp.teleport(t, true);
+        if (t != s) Msg.send(s, "Sending " + Theme.yellow(t.getName()) + " to a random spot.");
+    }
+
+    /** /smp combat [seconds <n> | clear <player|all>] */
+    private void combat(CommandSender s, String[] a) {
+        String sub = a.length > 1 ? a[1].toLowerCase() : "";
+        if (sub.equals("seconds") && a.length > 2 && parse(a[2]) >= 1) {
+            plugin.getConfig().set("combat.seconds", parse(a[2]));
+            plugin.saveConfig();
+            Msg.send(s, "Combat time set to " + Theme.yellow(parse(a[2]) + "s") + ".");
+        } else if (sub.equals("rejoin") && a.length > 2 && parse(a[2]) >= 1) {
+            plugin.getConfig().set("combat.rejoin.seconds", parse(a[2]));
+            plugin.saveConfig();
+            Msg.send(s, "Rejoin time set to " + Theme.yellow(parse(a[2]) + "s") + ". " + Theme.c(Theme.DIM, plugin.combat.rejoinEnabled() ? "" : "(the feature is off, switch it on in /smp)"));
+        } else if (sub.equals("clear") && a.length > 2) {
+            if (a[2].equalsIgnoreCase("all")) {
+                plugin.combat.clearAll();
+                Msg.send(s, "Combat cleared for " + Theme.yellow("everyone") + ".");
+                return;
+            }
+            Player t = org.bukkit.Bukkit.getPlayerExact(a[2]);
+            if (t == null) {
+                Msg.send(s, Theme.red("That player isn't online."));
+                return;
+            }
+            plugin.combat.clear(t, true);
+            Msg.send(s, "Combat cleared for " + Theme.yellow(t.getName()) + ".");
+        } else {
+            Msg.send(s, "Combat time " + Theme.yellow(plugin.combat.millis() / 1000 + "s") + ". "
+                    + Theme.blue("/smp combat seconds <n>") + "  " + Theme.blue("/smp combat rejoin <n>") + "  " + Theme.blue("/smp combat clear <player|all>"));
+        }
+    }
+
+    /** /smp safezone add <name> <radius> | remove <name> | list | spawn <radius> */
+    private void safezone(CommandSender s, String[] a) {
+        String sub = a.length > 1 ? a[1].toLowerCase() : "list";
+        switch (sub) {
+            case "add" -> {
+                if (!(s instanceof Player p) || a.length < 4 || parse(a[3]) < 1 || !me.smpcore.module.SpawnModule.validName(a[2])) {
+                    Msg.send(s, "Usage " + Theme.blue("/smp safezone add <name> <radius>") + " (stand in the middle, in game)");
+                    return;
+                }
+                plugin.combat.addZone(a[2], p.getLocation(), parse(a[3]));
+                Msg.send(s, "Safe zone " + Theme.yellow(a[2]) + " added, radius " + Theme.yellow(parse(a[3])) + ".");
+            }
+            case "remove" -> {
+                if (a.length < 3 || !plugin.combat.removeZone(a[2])) {
+                    Msg.send(s, "Usage " + Theme.blue("/smp safezone remove <name>") + " (see " + Theme.blue("/smp safezone list") + ")");
+                    return;
+                }
+                Msg.send(s, "Safe zone " + Theme.yellow(a[2]) + " removed.");
+            }
+            case "spawn" -> {
+                if (a.length < 3 || parse(a[2]) < 0) {
+                    Msg.send(s, "Spawn safe radius " + Theme.yellow(Theme.PLAIN_NUM(plugin.getConfig().getDouble("combat.safe-zone.spawn-radius", 25)))
+                            + ". Change it with " + Theme.blue("/smp safezone spawn <radius>") + " (0 = off).");
+                    return;
+                }
+                plugin.getConfig().set("combat.safe-zone.spawn-radius", parse(a[2]));
+                plugin.saveConfig();
+                Msg.send(s, "Spawn safe radius set to " + Theme.yellow(parse(a[2])) + ".");
+            }
+            default -> {
+                var names = plugin.combat.zoneNames();
+                Msg.send(s, "Safe zones " + Theme.yellow(names.size()) + " " + Theme.c(Theme.DIM, "(plus the spawn area and the automatic ones)"));
+                Msg.send(s, Theme.c(Theme.DIM, "WorldGuard: ") + Theme.yellow(plugin.combat.wgStatus()));
+                for (String n : names) Msg.send(s, Theme.green(Theme.esc(n)) + " " + Theme.c(Theme.DIM, Theme.esc(plugin.combat.describe(n))));
+            }
+        }
+    }
+
+    /** /smp spawn delay <seconds> */
+    private void spawnCfg(CommandSender s, String[] a) {
+        if (a.length >= 3 && a[1].equalsIgnoreCase("delay") && parse(a[2]) >= 0) {
+            plugin.getConfig().set("spawn.delay-seconds", parse(a[2]));
+            plugin.saveConfig();
+            Msg.send(s, "Teleport wait set to " + Theme.yellow(parse(a[2]) + "s") + ".");
+        } else {
+            Msg.send(s, "Wait time " + Theme.yellow(plugin.spawn.delay() + "s") + ". Change it with " + Theme.blue("/smp spawn delay <seconds>") + ".");
+        }
+    }
+
     private static int parse(String s) {
         try {
             return Integer.parseInt(s);
@@ -108,8 +202,10 @@ public final class SmpCommand implements TabExecutor {
             return;
         }
         if (a[1].equalsIgnoreCase("list")) {
-            Msg.send(s, "Banned items " + Theme.yellow(plugin.itemBan.banned().size()));
-            for (Material m : plugin.itemBan.banned()) Msg.send(s, Theme.red(m.name()));
+            Msg.send(s, "Banned items " + Theme.yellow(plugin.itemBan.entries().size()));
+            for (var en : plugin.itemBan.entries()) {
+                Msg.send(s, Theme.red(en.material().name()) + (en.item() == null ? "" : " " + Theme.c(Theme.DIM, "(exact item: " + Theme.esc(me.smpcore.module.ItemBanModule.sig(en.item())) + ")")));
+            }
             return;
         }
         boolean add = a[1].equalsIgnoreCase("add");
@@ -131,8 +227,16 @@ public final class SmpCommand implements TabExecutor {
     @Override
     public List<String> onTabComplete(CommandSender s, Command cmd, String label, String[] a) {
         List<String> out = new ArrayList<>();
-        if (a.length == 1) out.addAll(List.of("menu", "reload", "itemban", "grace", "whitelist"));
+        if (a.length == 1) out.addAll(List.of("menu", "reload", "itemban", "grace", "whitelist", "spawn", "rtp", "combat", "safezone"));
         else if (a.length == 2 && a[0].equalsIgnoreCase("grace")) out.addAll(List.of("start", "stop"));
+        else if (a.length == 2 && a[0].equalsIgnoreCase("spawn")) out.add("delay");
+        else if (a.length == 2 && a[0].equalsIgnoreCase("combat")) out.addAll(List.of("seconds", "rejoin", "clear"));
+        else if (a.length == 3 && a[0].equalsIgnoreCase("combat") && a[1].equalsIgnoreCase("clear")) {
+            out.add("all");
+            org.bukkit.Bukkit.getOnlinePlayers().forEach(pl -> out.add(pl.getName()));
+        } else if (a.length == 2 && a[0].equalsIgnoreCase("safezone")) out.addAll(List.of("add", "remove", "list", "spawn"));
+        else if (a.length == 3 && a[0].equalsIgnoreCase("safezone") && a[1].equalsIgnoreCase("remove")) out.addAll(plugin.combat.zoneNames());
+        else if (a.length == 2 && a[0].equalsIgnoreCase("rtp")) org.bukkit.Bukkit.getOnlinePlayers().forEach(pl -> out.add(pl.getName()));
         else if (a.length == 2 && a[0].equalsIgnoreCase("whitelist")) out.addAll(List.of("add", "remove", "list"));
         else if (a.length == 3 && a[0].equalsIgnoreCase("grace")) {
             out.add("all");

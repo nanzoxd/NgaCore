@@ -9,9 +9,19 @@ import org.bukkit.entity.Player;
  * left click enables, right click disables. A complex one opens its settings on left
  * click and flips its master switch (if it has one) on right click.
  */
-public record Feature(Category cat, Material icon, String name, String desc, String path, Opener open, Custom custom) {
+public record Feature(Category cat, Material icon, String name, String desc, String path, Opener open, Custom custom,
+        java.util.List<String> hints) {
     public Feature(Category cat, Material icon, String name, String desc, String path, Opener open) {
-        this(cat, icon, name, desc, path, open, null);
+        this(cat, icon, name, desc, path, open, null, java.util.List.of());
+    }
+
+    public Feature(Category cat, Material icon, String name, String desc, String path, Opener open, Custom custom) {
+        this(cat, icon, name, desc, path, open, custom, java.util.List.of());
+    }
+
+    /** Extra command hints for the tooltip, each line as "/command|what it does". */
+    public Feature hint(String... lines) {
+        return new Feature(cat, icon, name, desc, path, open, custom, java.util.List.of(lines));
     }
 
     public enum Category {

@@ -1,4 +1,5 @@
 name: SMPCore
+softdepend: [WorldGuard]
 version: '${project.version}'
 main: me.smpcore.SMPCore
 api-version: '1.21'
@@ -21,6 +22,44 @@ commands:
     description: Unban a player. Replaces the vanilla /pardon.
     usage: /pardon <player>
     permission: smpcore.tempban
+  spawn:
+    description: Teleport to spawn.
+    permission: smpcore.spawn
+  setspawn:
+    description: Set the spawn where you stand.
+    permission: smpcore.admin
+  warp:
+    description: Teleport to a warp.
+    usage: /warp <name>
+    permission: smpcore.warp
+  warps:
+    description: List the warps.
+    permission: smpcore.warp
+  setwarp:
+    description: Create a warp where you stand.
+    usage: /setwarp <name>
+    permission: smpcore.admin
+  delwarp:
+    description: Delete a warp.
+    usage: /delwarp <name>
+    permission: smpcore.admin
+  vanish:
+    description: Hide from everyone (tab list, chat completion, server list).
+    usage: /vanish [player]
+    aliases: [v]
+    permission: smpcore.vanish
+  freeze:
+    description: Freeze or unfreeze a player.
+    usage: /freeze <player>
+    permission: smpcore.freeze
+  invsee:
+    description: Look into a player's inventory.
+    usage: /invsee <player>
+    permission: smpcore.invsee
+  endersee:
+    description: Look into a player's ender chest.
+    usage: /endersee <player>
+    permission: smpcore.invsee
   tempban:
     description: Temporary bans with a GUI and custom messages.
     usage: /tempban <ban|unban|list|history|gui>
@@ -45,7 +84,53 @@ commands:
     description: Reply to your last private message.
     usage: /reply <message>
     aliases: [r]
+  announce:
+    description: Animated title, chat line and sounds for everyone.
+    usage: /announce <message>
+    aliases: [ann]
+    permission: smpcore.announce
+  broadcast:
+    description: Chat-only message for everyone (no title).
+    usage: /broadcast <message>
+    aliases: [bc, bcast]
+    permission: smpcore.broadcast
 permissions:
+  smpcore.announce:
+    description: Use /announce.
+    default: op
+  smpcore.broadcast:
+    description: Use /broadcast.
+    default: op
+  smpcore.vanish:
+    description: Use /vanish.
+    default: op
+  smpcore.vanish.see:
+    description: See vanished players.
+    default: op
+  smpcore.freeze:
+    description: Use /freeze and get frozen-player alerts.
+    default: op
+  smpcore.freeze.bypass:
+    description: Can't be frozen.
+    default: op
+  smpcore.invsee:
+    description: Use /invsee and /endersee (view only).
+    default: op
+  smpcore.invsee.modify:
+    description: Take and move items in /invsee and /endersee.
+    default: op
+  smpcore.randomtp.bypass:
+    description: Not sent to a random spot on first join.
+    default: false
+  smpcore.spawn:
+    description: Use /spawn.
+    default: true
+  smpcore.warp:
+    description: Use /warp and /warps.
+    default: true
+  smpcore.spawn.bypass:
+    description: No wait before teleporting to spawn or a warp.
+    default: false
   smpcore.admin:
     description: Settings GUI and admin commands.
     default: op
@@ -72,8 +157,11 @@ permissions:
   smpcore.chat.bypass:
     description: Skip cooldown, duplicate, word, caps and link filters.
     default: false
+  smpcore.bypass.combat:
+    description: Never combat tagged, no command blocking, no logout penalty, safe zones don't stop you.
+    default: false
   smpcore.bypass.tweaks:
-    description: Skip block placing/breaking, vault and combat-log rules.
+    description: Skip block placing/breaking and vault rules.
     default: false
   smpcore.maintenance.bypass:
     description: Join while maintenance mode is on.

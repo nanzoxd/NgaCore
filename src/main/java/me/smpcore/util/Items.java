@@ -28,7 +28,8 @@ public final class Items {
     }
 
     public Items name(String mm) {
-        meta.displayName(Theme.parse("<gradient:#cdd5e3:#9babc7>" + mm + "</gradient>"));
+        boolean own = mm.contains("<gradient");
+        meta.displayName(Theme.parse(own ? mm : "<gradient:#cdd5e3:#9babc7>" + mm + "</gradient>"));
         return this;
     }
 

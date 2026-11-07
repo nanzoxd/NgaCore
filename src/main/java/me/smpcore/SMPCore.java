@@ -44,9 +44,14 @@ public final class SMPCore extends JavaPlugin {
     public ItemBanModule itemBan;
     public NetheriteBanModule netherite;
     public GraceModule grace;
+    public me.smpcore.module.SpawnModule spawn;
+    public me.smpcore.module.StaffModule staff;
+    public me.smpcore.module.RandomTpModule randomTp;
     private PotionModule potions;
     private EnchantModule enchants;
     public XaeroModule xaero;
+    public me.smpcore.module.CombatModule combat;
+    public me.smpcore.module.AnnounceModule announce;
 
     @Override
     public void onEnable() {
@@ -54,6 +59,7 @@ public final class SMPCore extends JavaPlugin {
         migrateLookAndFeel();
         migrateColours();
         migrateBanScreen();
+        migrateCombatMessages();
         migrateNetheriteBan();
         Msg.init(this);
 
@@ -81,12 +87,20 @@ public final class SMPCore extends JavaPlugin {
         pm.registerEvents(itemBan, this);
         pm.registerEvents(netherite, this);
         pm.registerEvents(new InstaRestockModule(this), this);
+        staff = new me.smpcore.module.StaffModule(this);
+        pm.registerEvents(staff, this);
+        spawn = new me.smpcore.module.SpawnModule(this);
+        pm.registerEvents(spawn, this);
+        randomTp = new me.smpcore.module.RandomTpModule(this);
+        pm.registerEvents(randomTp, this);
         grace = new GraceModule(this);
         pm.registerEvents(grace, this);
         pm.registerEvents(potions, this);
         pm.registerEvents(enchants, this);
         pm.registerEvents(chat, this);
         pm.registerEvents(xaero, this);
+        combat = new me.smpcore.module.CombatModule(this);
+        pm.registerEvents(combat, this);
         pm.registerEvents(new DamageLimiterModule(this), this);
         pm.registerEvents(new CooldownModule(this), this);
         pm.registerEvents(new DimensionModule(this), this);
@@ -102,11 +116,19 @@ public final class SMPCore extends JavaPlugin {
         bind("unban", bc);
         bind("pardon", bc);
         bind("punish", new PunishCommand(this));
+        me.smpcore.command.StaffCommand stc = new me.smpcore.command.StaffCommand(this);
+        for (String n : new String[] {"vanish", "freeze", "invsee", "endersee"}) bind(n, stc);
+        me.smpcore.command.SpawnCommand sc = new me.smpcore.command.SpawnCommand(this);
+        for (String n : new String[] {"spawn", "setspawn", "warp", "warps", "setwarp", "delwarp"}) bind(n, sc);
         PluginCommand pvp = getCommand("pvp");
         if (pvp != null) pvp.setExecutor(tweaks);
         ChatCommands cc = new ChatCommands(this, chat);
         bind("msg", cc);
         bind("reply", cc);
+        announce = new me.smpcore.module.AnnounceModule(this);
+        me.smpcore.command.AnnounceCommand ac = new me.smpcore.command.AnnounceCommand(this);
+        bind("announce", ac);
+        bind("broadcast", ac);
     }
 
     /** Servers upgrading from 1.1.x still have the old gray prefix saved: switch it to the new [ꜱᴍᴘ] one. */
@@ -120,6 +142,19 @@ public final class SMPCore extends JavaPlugin {
     }
 
     /** 1.3.0 ban screen: add the time left / appeal lines to a saved screen that doesn't have them. */
+    /** 1.4.1: new "out of combat" messages and titles replace the old saved text once. */
+    private void migrateCombatMessages() {
+        var c = getConfig();
+        if (c.getInt("combat.messages-version", 1) >= 3 || getConfig().getDefaults() == null) return;
+        for (String k : new String[] {"ended", "ended-title", "ended-subtitle", "tagged-title", "tagged-subtitle", "safe-enter", "safe-leave",
+                "rejoin-quit", "rejoin-expired", "rejoin-ok", "rejoin-ok-title", "rejoin-ok-subtitle", "rejoin-late", "rejoin-late-title", "rejoin-late-subtitle"}) {
+            String def = getConfig().getDefaults().getString("combat.messages." + k);
+            if (def != null) c.set("combat.messages." + k, def);
+        }
+        c.set("combat.messages-version", 3);
+        saveConfig();
+    }
+
     private void migrateBanScreen() {
         var c = getConfig();
         if (c.getInt("tempban.screen-version", 1) >= 2 || getConfig().getDefaults() == null) return;
@@ -192,6 +227,8 @@ public final class SMPCore extends JavaPlugin {
         Msg.init(this);
         tempBans.load();
         itemBan.load();
+        spawn.load();
+        combat.load();
         netherite.load();
         punish.load();
         dragon.applyAll();
