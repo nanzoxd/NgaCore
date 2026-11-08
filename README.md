@@ -1,112 +1,175 @@
-# SMPCore
+# EventCore
 
-All-in-one SMP rules plugin for Paper 1.21.x (Java 21). One command, `/smp`, opens a GUI for everything.
+Paper plugin (Java 21, Paper API 1.21.x, Adventure/MiniMessage, no Skript). Folia-safe scheduling.
 
 ## Build
-```
-mvn package
-```
-The jar is `target/SMPCore-1.3.0.jar`. It is compiled against paper-api 1.21.8 (Dialog API) and needs Paper 1.21.7 or newer.
+    mvn clean package
+The jar is `target/EventCore-1.0.0.jar`. Drop it into `plugins/` and start the server.
+It compiles against `paper-api 1.21.8`; the locator bar event needs a server that has that gamerule (1.21.6+),
+everything else works on earlier 1.21.x servers that have the same API.
 
-## Modules (all editable in `/smp`)
-| Module | What it does |
-|---|---|
-| Damage Limiters | Cap final damage per hit: mace, spear, trident, bow, crossbow, TNT, TNT minecart, end crystal, anchor/bed, wind charge |
-| Cooldowns | Mace, spear lunge, wind charge, ender pearl, golden apples, chorus fruit, elytra rocket, trident. Uses the vanilla cooldown overlay on the item |
-| Netherite Ban | Toggle each netherite piece, ingot, scrap, block, ancient debris and template. Blocks crafting, smithing, pickup, use and mining, and sweeps inventories |
-| Item Ban | Same engine for any item (`/smp itemban add|remove|list`) |
-| Potion Limiter | Per-effect ban or max level. Blocks brewing and use. `allow-command-effects` toggle keeps `/effect give` working |
-| Enchant Limiter | Global and per-item (wildcards) level limits for anvil and enchanting table |
-| Dimension Ban | Close the Nether and/or End, also blocks teleports into them |
-| TempBan | `/tempban ban|unban|list|history|gui`, picker GUI, custom message, presets, custom kick screen, history |
-| Death Ban | Temp-ban on death |
-| Chat Moderation | Cooldown, duplicate block, caps, links, blocked words, @mentions with sound, /msg /reply, join/leave, death messages with hover stats, hidden advancement spam |
+## Config files (plugins/EventCore/)
+config.yml (palette, style, timezone, limits), messages.yml, events.yml (all events, scheduler, airdrop),
+rituals.yml (Ritual Creator + particle layers), loot.yml (crate loot), gui.yml (GUI layouts).
+Text supports MiniMessage, `{placeholders}` and `<g>` (palette gradient). Small caps are applied automatically
+to template text (switch: `style.small-caps`). Missing keys are added from the defaults on start.
 
-## Permissions
-`smpcore.admin`, `smpcore.tempban`, `smpcore.chat.bypass`, `smpcore.bypass.{damage,cooldown,itemban,potion,enchant,dimension,deathban}`
+## Commands
+/eventcore start <event|count> [minutes] | force <event> [minutes] | rig <event|clear> [minutes] | stop [event]
+| list | reload | gui | schedule | airdrop spawn <tier>      (permission eventcore.admin or eventcore.<sub>)
+/ritualcreator (/rcreator, /creator)                         (eventcore.ritual)
+eventcore.bypass skips blocked commands during Locator Bar and shows real names to admins during Anonymous.
 
-## Notes
-- Spear items are looked up by name, so spear cooldown and damage only apply on versions that have spears.
-- Cooldown for spear lunge is best-effort: it starts one tick after a right-click with a spear.
-- A cancelled brew leaves the ingredients in the stand; the stand simply won't finish a banned potion.
+## Discord notifications
+In config.yml set `discord.enabled: true` and paste your webhook URL under `discord.webhook-url`.
+Sent for: event start/end, scheduled start warnings, lootdrop landed/opened, ritual start/complete/stop.
+Each toggle, colour, the ping (`discord.mention`) and the server name are configurable.
 
-## 1.1.0 additions
-- Potion and Enchant limiters are dialogs: search box, every name in pages of 12, then a slider for the limit (0 = banned).
-- Death Ban: `death-ban.spectator` keeps the player in spectator mode for the duration instead of banning.
-- `/smp` and `/settings` open one big paged settings menu (SMPUtils-style glass border, a new accent colour per page) with every feature, plus search. Tooltips use mouse-icon lines such as "▌▌ Disabled". Left click enables, right click disables; value items also use middle click to reset. Death Ban and Dimension Ban use left and right click for two options each.
-- Spear Ban: ban or allow each spear (uses the item ban engine).
-- `/punish <player>`: ban, mute, kick, warn. Warnings escalate to a temp-ban (`punish.escalation`).
-- Dragon Health, `/pvp`, and 20+ simple switches under `tweaks:` in config.yml.
-- Ported from SMPUtils (switches under `tweaks:`): ban crystal PvP, bed bombing, ender pearls, TNT minecarts, villager killing, spawner mining, explosives and draining; disable phantoms, no mob spawning/griefing; book limit; void protection; cobweb decay; XP clumps; apple and heavy core drops; player head drop.
-- Not ported (need packets or large systems): anti-xray, anti-minimap, anti-indicators, mod blocker, anti-alt/VPN, homes, tpa/rtp, kits, rituals, loot boxes, custom recipes, invsee, vanish, tree/vein miner.
+## Loot editing
+`/eventcore airdrop loot [tier]` opens the loot editor. Admins (eventcore.gui) can also **sneak + click a crate**, falling
+or landed, to open the editor for that crate's tier. The editor shows the loot as real items in a locked chest. Left click raises an entry's chance by 5, right click lowers it by 5, shift-left / shift-right change the amount by 1, Q removes the entry. Add an item by clicking an empty slot with it on your cursor or shift-clicking it in your inventory. The bottom row goes back, saves, or adds a command reward. Closing the editor saves too.
 
-## 1.2.0 additions
-- New look: the palette `#3a5a73 #6d93ab #abc4d1 #e3dccf #f2ede4` carries all text; red, orange, yellow, green and blue only mark key words. Prefix is now a bold gray gradient `[ꜱᴍᴘ]`, so messages read like `[ꜱᴍᴘ] pvp disabled`.
-- Evoker Totem Drop (`tweaks.evoker-totem-drop`): turn it off and evokers no longer drop a totem of undying.
-- Ban Ender Pearls (`tweaks.ban-pearl`) now only blocks throwing. Pearls stay in the inventory and are never removed.
-- Xaero Minimap (`xaero:` in config, `/smp` -> Xaero Minimap): left click = fair play mode, right click = disable the minimap for everyone, optional per-world overrides. Replaces XaeroForceDisabler. Bypass: `smpcore.bypass.xaero`.
+## Elo Buff event
+`/eventcore start elobuff` multiplies every Elo gain (kills and playtime) by `settings.multiplier` (default 1.5) while it runs.
+It needs the patched ReliqueOnlineAPI (ReliqueSmpStats-patched.zip: adds `getStatsManager()` and `setEloGainMultiplier`).
+Losses are not changed. The multiplier goes back to normal when the event ends or the server stops.
 
-## 1.3.0 changes
-- Tooltip icons: `▆▆` mouse bars (clicked button green, other gray) and a green `◉` for middle click / reset.
-- Netherite Ban now works like NoNetheritePlus: only armour, tools and the spear, and a banned piece just can't be upgraded at the Smithing Table. Players can still hold, wear and use netherite they own. New config section `netherite-ban:`; old netherite entries are moved out of `item-ban.banned` automatically.
-- Spears are listed wooden -> netherite, sit right before Netherite Ban in the settings list, and fill one clean row in their menu.
-- Settings menu has category tabs (All / PVP / Administrator / World / Util) in the top row.
-- Dialog buttons: red `← Previous`, `Next →`, `✖ Back` / `✖ Close`.
-- Insta Restock (`instarestock:` in config, `/smp` -> Util): villagers and wandering traders restock when a trade screen opens or a trade is made. Options: wandering traders, price-penalty reset, cooldown, profession blacklist.
-- The settings menu has a second glass row under the category tabs; the item grid is 7x3 per page.
-- Grace (`grace:` in config, `/smp` -> PVP -> Grace): Resistance IV and Saturation for 30 minutes plus a sidebar clock `🕛 Grace / 30:00`. Every player gets it each time they join; the clock turns green, yellow, orange, red; optional restart after respawn. Time only counts while online. `/smp grace start|stop [player|all]`.
-- Blue theme `#052e74 #36578f #6981ab #9babc7 #cdd5e3`: blue text is drawn as gradients, accents (lore states, keywords) are vibrant. `[ꜱᴍᴘ]` uses the gradient `#C3C3C3 -> #E7E7E7`, `[MSG]` is `#850120`. Saved configs are recoloured once on first start (`theme-version`).
-- Grace scoreboard: small-caps `ɢʀᴀᴄᴇ` title, time centred under it (`grace.scoreboard.pad`).
-- `/ban <player> <duration> [reason]` (and `/unban`, `/pardon`) replace the vanilla commands, e.g. `/ban MrNanzo 7d Griefing`. Without a duration it is permanent.
-- Ban screen shows the reason, time left, duration, expiry, who banned and where to appeal (`tempban.appeal`, e.g. your Discord link), in the theme gradients. Saved configs get the new screen automatically.
-- Ban animation (`tempban.animation`, `/smp` -> Administrator -> Ban Animation): a giant mace charges above an online player, slams down with a red shockwave and red particles, then the ban screen shows.
-- Ban animation: the player is turned to look up at the mace as it slants down from in front of them, and its sounds are only played to players within `tempban.animation.sound-radius` blocks (default 24).
-- Ban screen heading is red and bold. During the animation the ground jumps: blocks around the player rise and drop back in a wave with the shockwave (`tempban.animation.ground-radius`, visual only).
-- Custom weapon whitelist (`/smp` -> Spear Ban -> Custom weapon whitelist, or hold the item and `/smp whitelist add|remove|list`): when a base item such as the iron spear is banned, your own custom spears stay usable. An entry matches the material plus the details recorded from the item: item model, custom model data, name and text tags written by custom-item plugins. Plain vanilla items can't be whitelisted.
-- `/spawn`, `/setspawn`, `/warp <name>`, `/warps` (menu), `/setwarp <name>`, `/delwarp <name>`. Players wait `spawn.delay-seconds` (default 5, change with `/smp spawn delay <seconds>`) with an action-bar countdown; moving or taking damage cancels the teleport. Separate Spawn and Warps entries in `/smp` -> Util (left click opens, right click enables or disables; command hints in the tooltip). `smpcore.spawn.bypass` skips the wait. Locations are saved in `locations.yml`.
-- Random TP (`random-tp:` in config, `/smp` -> World -> Random TP): new players are sent to a random safe spot on their first join, within `radius` blocks of the centre (the spawn by default, or `world`, or `"x,z"`). Adjust the radius in the menu (click: 500, Shift: 200) or test it with `/smp rtp [player]`. `smpcore.randomtp.bypass` skips it.
-- Feature names in the main menu each get their own dark-light-dark gradient (Random TP is `#00D0FF #C4EEFF #00D0FF`).
-- Feature names in the main menu are drawn in small caps.
-- Staff tools (`staff:` in config, `/smp` -> Administrator): `/vanish` (alias `/v`) hides you from players, the tab list, name completion, the server list, `/list`, `/msg` and join/leave/death/advancement messages, and survives relogs; `smpcore.vanish.see` can see vanished staff. `/freeze <player>` stops movement, building, interaction, damage and commands (and survives relogs, optional `quit-command`). `/invsee <player>` and `/endersee <player>` open inventories, view only unless `smpcore.invsee.modify`.
+## Miners Haven event
+(formerly Millionaire; the aliases `millionaire` and `mrbeast` still work) `/eventcore start miners_haven` makes every gold ore (GOLD_ORE, DEEPSLATE_GOLD_ORE, NETHER_GOLD_ORE) drop extra gold on top of its normal drop:
+`settings.extra-min` to `extra-max` more raw gold (or gold nuggets from nether gold ore), `settings.chance` percent per ore, `settings.blocks` lists the ores.
+Silk touch gets no bonus (the ore block itself drops).
 
-## Settings menu layout change
-- The category tabs and the second glass row are gone; the item grid starts right under the top border (7x4 per page).
-- Top row, first slot: a nether star that cycles All / PVP / Administrator / World / Util (left click = next, right click = previous).
-- Top row, ninth slot: a command block that opens the Commands menu, listing every command (/vanish, /spawn, /warp ...) with usage, aliases, permission and feature state. Commands registered in plugin.yml but missing from the list are added automatically.
+## DuoDeck
+The former Elo Buff event is now called DuoDeck (`display-name`). Its internal id stays `elo_buff`, so config, scheduler and saved data keep working.
 
-## Combat system
-- Hitting or being hit by a player starts a combat timer (`combat.seconds`, default 20, `/smp combat seconds <n>`). Action bar: `🕛 ᴄᴏᴍʙᴀᴛ : 20` in the `[MSG]` red `#850120`. Messages are in `combat.messages` (MiniMessage).
-- Command blocking (`combat.commands`): `mode: blacklist` blocks the `blocked` list, `mode: whitelist` blocks everything except `allowed`. Aliases and `minecraft:` prefixes are caught (blocking `msg` also blocks `/tell`).
-- Logging out in combat kills the player and broadcasts it (`combat.logout`). Staff kicks are not punished.
-- Safe zones (`combat.safe-zone`): the spawn area (`spawn-radius`, `/smp safezone spawn <radius>`) plus zones made with `/smp safezone add <name> <radius>` where you stand (`remove`, `list`). Inside a safe zone players can't hit or be hit by other players, and a player in combat can't walk, pearl or chorus into one.
-- `/smp combat clear <player|all>` ends combat early. Menu: `/smp` -> PVP -> Combat. Bypass: `smpcore.bypass.combat`.
-- Replaces the old `tweaks.combat-log` switch.
+## Tab completion
+`/eventcore start|force|stop|rig <tab>` suggests exactly one name per event (its display name as one word: `golden_tree`, `duodeck`, `miners_haven`).
+Ids and aliases still work when typed, they are just not suggested.
 
-## 1.4.1 changes (combat)
-- Safe zones are now set up automatically: every WorldGuard region with the flag `pvp: deny` counts as a safe zone (no jar needed, WorldGuard is only a soft dependency), and `combat.safe-zone.auto.warps-radius` can turn every warp into one. The spawn area and `/smp safezone` zones still work. `/smp safezone list` shows the WorldGuard status.
-- New messages: "You are out of combat" (chat, big title and sound), a title when you get tagged, and an action-bar message when you enter or leave a safe zone (`combat.safe-zone.auto.notify`). All texts are in `combat.messages`, titles can be switched off with `combat.titles`. Saved configs get the new texts once (`combat.messages-version`).
+## Event display
+`event-display` in config.yml (or the Events page in `/eventcore gui`) sets how running events show: BOSSBAR, ACTIONBAR or BOTH.
+Actionbar and bossbar read "Golden Tree : 01:00" in small caps. Each event has its own bossbar colour, style and gradient in events.yml.
 
-## 1.4.2: rejoin time
-- New feature **Rejoin Time** (`combat.rejoin`, off by default, switch in `/smp` -> PVP -> Rejoin Time or the Combat menu). When it is on, a player who disconnects in combat is not punished at once. They have `combat.rejoin.seconds` (30, change with `/smp combat rejoin <seconds>`) to log back in.
-  - Back in time: no penalty, and (`retag`) they are tagged again for the combat time they had left, so they can't escape by relogging.
-  - Too late: it is announced when the time runs out, and the player is killed the moment they next join (an offline player can't be killed through the server API). They appear where they logged out, so their items drop there.
-- Pending rejoins are saved in `combat-rejoin.yml`, so a restart doesn't lose them. A server stop is never treated as a combat logout.
+## Colours
+Everything uses only the two palettes in config.yml: peach (#fffbf0 #fff1e0 #ffe4d5 #ffd7ca #ffcfca) and gold (#d8b04a #e8c670 #f1d58f #f7e2ad #fff0cc).
+Titles, chat, bossbars, holograms and the GUIs follow `palette`, `theme`, `bossbar-gradient` and the per event gradients in events.yml.
+The `[EventCore]` label (chat prefix and /eventcore gui title) is the grey gradient #808080 #C4C4C4 #808080 (`eventcore-gradient`, messages.yml `prefix`).
+Chat, titles and messages use only the palette (config.yml `palette`, `style.text-color`). Any red/green/gray colour tag in a
+message is flattened to `style.text-color` (`style.flatten-colors: false` turns that off). Bossbars use `bossbar-gradient`.
 
-## 1.4.3: announcements
-- `/announce <message>` (alias `/ann`, permission `smpcore.announce`): a big small-caps **ᴀɴɴᴏᴜɴᴄᴇᴍᴇɴᴛ** title in the gradient `#00EEFF -> #D5FBFF` with a white glint that sweeps over it, the message centred under it, and the line `ᴀɴɴᴏᴜɴᴄᴇᴍᴇɴᴛ → message` in chat. Works from the console too.
-- A Minecraft subtitle can't wrap, so a long message is word-wrapped (`announce.wrap-chars`, 32) and the lines show one after another under the title (`announce.page-seconds`, 4). The full text is always in chat.
-- Sounds: `announce.title-sounds` is a list that plays in order with a delay in ticks (default: beacon activate, chime 0.3s later, level-up 0.6s later). Add or change entries freely.
-- `/broadcast <message>` (aliases `/bc`, `/bcast`, permission `smpcore.broadcast`): chat only, no title, own sound (`announce.broadcast-sound`).
-- Switch in `/smp` -> Administrator -> Announcements (`announce.enabled`). Texts, colours, glint speed and width are in the `announce:` section of config.yml.
-- Colour presets (`announce.presets`, current one in `announce.preset`): ice (default), gold, crimson, emerald, violet, sunset, royal, or add your own. In `/smp` -> Administrator -> Announcements hover the bell and press **Q** for the next preset, **Ctrl+Q** for the previous one; the title is previewed to you with the new colours and the choice is saved. It recolours the title, the chat label and the message text.
+## Notes on behaviour
+* `rig` queues an event: the next `/eventcore start <count>` roll (or random pick) takes rigged events first.
+* The airdrop code is displayed (bossbar, actionbar, title, chat) and on the crate hologram; it is not an input.
+* Crates are invulnerable at all times; hits are counted as virtual HP, so explosions can never break them.
+* Ritual: the sigil, GUI and bossbar follow RitualCreator.sk: a circle (radius 9) with a hexagram (two triangles, radius 4.5) and ambient particles falling above it,
+  drawn at `particles.height` above the ritual spot (2.325 like the script, lower it to put it on the ground). The nether star in the ritual menu cycles `particles.cycle`
+  (gold, peach); add more palettes under `particles.palettes`. The bossbar shows "item Ritual | time [x, y, z]" and drains like the script.
+  Finishing shows "<item> ritual completed" as the title. Adventure bossbars have no id.
+* Reloading while a ritual runs keeps it running and warns admins, like the original script.
+* `/eventcore gui` lists every key of every file with a widget for its type, so every setting is editable in-game.
 
+## Updating
+Delete the old `plugins/EventCore/` config files (config, events, messages, gui, rituals) once so the new defaults are written.
 
-## 1.4.4: small changes
-- **Rejoin time** is no longer its own entry. It is on the **Combat** icon in the settings menu: press **Q** to turn it on or off (the tooltip shows its state and the time to rejoin). It is still in the Combat menu too.
-- **Spawn, Warps, Vanish, Freeze and Inventory See** are no longer in the main feature list, because they are commands. Their switches are in the **Commands** menu (command block, top right): left click on a command enables the feature behind it, right click disables it. On `/spawn`, press **Q** for the spawn settings (cancel on move, cancel on damage, respawn at spawn).
+## Known limits
+* Anonymous skin uses Paper's profile API with the texture link in events.yml (settings.skin.url); check that skin loads on your server.
+* Scoreboard teams (glow colours, hidden nametags) are limited on Folia; failures are logged once.
+* This source was written without access to a compiler or Paper API in the authoring environment: it has not been
+  built or run. Expect to fix a few compile errors on the first `mvn package`.
 
-## 1.4.5: item ban with a menu
-- `/smp` -> Item Ban now has a **hopper** at the top. Put any item on your cursor and click it (or hold the item and click): **left click** bans that **exact item** (a Sharpness V book, a Strength II potion, a named or custom item), **right click** (or Shift) bans the **whole item type**. Plain items always ban the whole type. Click a banned entry to allow it again. Exact items keep their own look in the list.
-- A banned item can't be picked up, crafted, used, placed, **put into a chest or taken out of one** (also hoppers and number-key swaps), and is removed from inventories (existing options). Switch for the chest part: `item-ban.block-containers`.
-- What counts as "the exact item": material, enchantments, stored enchantments (books), potion type and effects, custom name, item model, custom model data and text tags. Damage and amount don't matter.
-- `/smp itemban list` shows the exact items too. Exact items are saved in `item-ban.exact`.
+## Lootdrop flow
+Start -> `Lootdrop Incoming | 30 Seconds` (`spawn.incoming-seconds`) -> `Lootdrop Falling | 25 Minutes` (`fall.duration-minutes`),
+spawned at least 100 blocks above the surface (`fall.min-height`), smooth descent, explosion on landing, low-pitched elytra sound next to the landed crate
+(`land.ambient-sound`). The event runs at least incoming + fall + 5 minutes. Hitting a crate announces each new hitter in chat; when it opens the top 3 hitters are listed (`hit.top-count`).
+
+## Late joiners
+Players who join while an event runs get its bossbar and a one-time chat explanation (`events.<id>.messages.join`, header in messages.yml `event-join`). Nothing restarts.
+
+## Ritual palettes
+gold, peach, fire, pink, blue, red, white (nether star in /ritualcreator cycles through every palette in rituals.yml).
+
+## Altars (custom crafting)
+
+`altars.yml` + `/altar` (permission `eventcore.altar`, players need `eventcore.altar.use`, default true).
+
+- `/altar recipes` opens the recipe GUI: **new recipe** -> put the ingredients in the 3x3 grid, the result in the output slot,
+  set the ritual minutes (clock, default 30) and press **save**. Left-click a recipe to edit, shift + right-click to delete.
+- `/altar spawn <preset>` builds an altar (presets and their block layout are in `altars.yml` -> `presets`). Right-click the
+  centre block to craft: ingredients in the 3x3 grid, click the output to start the ritual. The output drops on the altar when it ends.
+- `/altar spawn <recipe id>` builds an altar that crafts only that recipe (one altar per output, e.g. `/altar spawn nether_sword`);
+  recipe ids tab-complete. `/altar spawn [preset]` still places the all-recipes altar. `/altar spawn` prints what the altar crafts.
+- The pedestal shows the recipe's output item rotating above it (no glow), before the ritual too (`display.idle`). The hologram shows
+  the output name (its own gradient/colours, bold if it has no custom name) with a line under it (`hologram.underline`), then one
+  ingredient per line as `[4] Netherite Ingot`.
+- Recipe editor (`/altar recipes`, `/altar recipe edit <id>`): put the ingredients in the 3x3 grid and the result in the right slot,
+  click an item to take it out, stack size = amount, +/- buttons for minutes. Placed items are returned when you close it.
+- `/altar bind <preset> <recipe|none>` makes a preset craft one recipe; the hologram above the altar then shows that recipe.
+- `/altar remove [id]`, `/altar list`, `/altar stop [id|all]`, `/altar reload`.
+- **Coordinate reveal:** the ritual bossbar/chat/title show the altar's coordinates one number at a time:
+  X when it starts, Y after 10 min, Z after 15 min (`ritual.reveal-seconds`, scaled for other ritual lengths).
+  Hidden numbers are obfuscated filler digits, the real value is never sent early.
+- Altar blocks are protected from breaking and explosions; running rituals survive restarts.
+
+## Altar crafting (hologram style)
+Right-click the altar (the centre block, a structure block in LOAD mode; existing altars need /altar remove + /altar spawn to change) with the ingredients in your inventory. The hologram above it lists every recipe
+(`altars.yml` preset `recipe:` binds a preset to one recipe, empty = all). The first recipe you have all items for starts a
+ritual: the ingredients are taken, the output floats above the pedestal, the boss bar counts down and the coordinates are
+revealed one number at a time (`ritual.reveal-seconds`). When the ritual ends the item drops above the pedestal and the altar
+vanishes after `ritual.remove-after-seconds` (`ritual.remove-altar: false` keeps it).
+Recipes live in `plugins/EventCore/altar-recipes.yml` (any input / output items, custom names, model data, enchants) or in game:
+`/altar recipe create <id> [minutes]`, `/altar recipe output <id>` (item in hand), `/altar recipe input <id> [amount]` (exact item in hand)
+or `/altar recipe input <id> <MATERIAL> <amount>`, `/altar recipe clear|minutes|delete|list`. `/altar reload` re-reads the file.
+
+## Player Hunt
+`/playerhunt <player1> <player2> ...` (alias `/phunt`, permission `eventcore.playerhunt`) hunts any number of online players at once.
+Every target gets a bossbar with the name and live coordinates (`hunt.bossbar`), and one chat update with everybody's coordinates goes out every
+`playerhunt.broadcast-seconds` (30). `/playerhunt stop [player|all]`, `/playerhunt list`. Targets who log out show "offline" and resume on rejoin.
+
+## RandomTarget event (`/eventcore start random_target`)
+A scheduled event like the others (events.yml `events.random_target`, admin GUI, aliases `randomtarget`, `rtarget`, `target`). Formerly called "Player Hunt"; existing configs are migrated automatically. Not the same thing as the `/playerhunt` command above.
+* Every online player gets a random other player as target (two players can hunt each other). Action bar: `Target [head] name : 200m`
+  (`random-target.actionbar` in messages.yml). A target offline for `settings.reassign-after-seconds` (120) is replaced by another random online player.
+* Player head: SkinsRestorer (soft dependency) supplies the skin the player really wears and the premium UUID, so heads are right on offline-mode servers;
+  without SkinsRestorer the skin from the live profile is used. Heads are Adventure object components: they need Paper 1.21.9+ and a 1.21.9+ client.
+  On older servers a symbol (`settings.head-fallback`) is shown instead. Set `settings.head: false` to turn heads off.
+* Locator bar: the gamerule is switched on for the event (and restored after). Each hunter's `waypoint_receive_range` is set to the distance to the target (+`locator-margin`),
+  so the bar shows the target. **Limit:** vanilla has no per-viewer waypoint filter, so a player standing closer to the hunter than the target still appears too.
+  `settings.locator-filter: false` turns the filtering off. It cannot run together with the Locator Bar event (added to `incompatible-events`).
+* Sidebar scoreboard with the top 3 killers: small-caps centred title, #1 gold, #2 gray, #3 bronze (`settings.scoreboard.colors`). Any player kill counts.
+* When the event ends a title says `<name> is top killer 🏆` (`random-target.winner-title`), or that nobody got a kill.
+* Built with Paper 1.21.8 API; heads, SkinsRestorer and the scoreboard number format are reached by reflection, so the plugin still loads everywhere.
+
+## Bounty Hunt
+`/bountyadd <player>` (alias `/bounty`, permission `eventcore.bounty`) opens the GUI: put ANY item in the middle slot (enchanted, custom named, shulkers, books...
+it is stored exactly as placed), set the survival timer with the clock (left +, right -, shift x5) and press start.
+* Bossbar: target, reward, live coordinates and time left. Coordinates in chat every `bounty.broadcast-seconds` (30).
+* Target survives the timer: the target gets the reward. Another player kills the target: the killer gets it. Victory / defeat titles go to both.
+* Target offline longer than `bounty.disconnect.grace-seconds` (120): the bounty moves to a random eligible online player (not creative/spectator,
+  not `eventcore.bounty.exempt`); with no one eligible, or `action: CANCEL`, the reward goes back to its creator.
+* Rewards leave a bounty through one guarded step (atomic done flag, one file write), then sit in a pending list in `bounties.yml` until they are in the winner's
+  inventory, so they are never paid twice and never lost to an offline player or a restart. A full inventory drops the item at the winner's feet, owned by them, never despawning.
+* Active bounties and pending rewards are saved in `plugins/EventCore/bounties.yml` (on every change, every 10 s and on shutdown).
+* `/bountystop [player|all]` and `/bountylist`. Settings: `bounty:` in config.yml, texts: `bounty:` in messages.yml, GUI: `bounty-gui:` in gui.yml.
+* Discord: no new webhook. `discord.notify.hunt-start` / `bounty-start` (off by default) would reuse your webhook and the existing `event` thumbnail.
+
+## Admin GUI
+`/eventcore gui` has: Events, Airdrop, Loot tables, Ritual creator, Ritual settings, Altar recipes, Player hunt, Bounty, Reload.
+(The general "Config editor" button was removed; edit the yml files directly. Ritual settings still opens the in-game key browser for rituals.yml.)
+Every tooltip shows controls as mouse icons: a lit half of `▆ ▆` is the pressed button (colours in config.yml `lore.mouse`).
+
+## Ritual scheduling and IST
+All EventCore times use `timezone` in config.yml, now `Asia/Kolkata` (IST). On first start the plugin switches an existing config to IST once, so event schedules in events.yml are read as IST from then on.
+`/ritual schedule` opens the scheduler: date, hour and minute (IST), the ritual item in the middle slot, ritual length, and a button that sets the location to where you stand.
+`/ritual list` and `/ritual cancel <id>` (returns the item). A schedule waits if another ritual is running at its time. Saved in `data/ritual-schedule.yml`, so it survives restarts. `/ritual` alone opens the Ritual Creator.
+
+## Egg Hunt and Natural Disaster
+
+Both are normal EventCore events (they show up in `/eventcore list`, the admin GUI, the scheduler and Discord hook) with their own commands.
+
+**Egg Hunt** - `/egghunt start [minutes] | stop | reset | leaderboard | reload | setarena [radius] | addspawn | clearspawns`
+Eggs are real blocks placed on the surface and in caves of the configured area; each replaced block is saved to `egghunt-state.yml` and restored when the hunt ends, on `/egghunt reset`, on plugin disable and after a crash. Settings: `events.egg_hunt.settings` in events.yml, texts in messages.yml (`egg-hunt.*`).
+
+**Natural Disaster** - `/disaster start [minutes] | stop | reset | setcenter | setarena | setexit | status | reload | join | leave`
+The border is a virtual per-player `WorldBorder` (drawn like the vanilla one, animated by the client). The real world border is never touched. Setup: stand at the arena centre and run `/disaster setcenter`, optionally `/disaster setarena` (drop point) and `/disaster setexit` (destination). Settings: `events.natural_disaster.settings`.
+
+Permissions: `eventcore.egghunt.admin`, `eventcore.egghunt.<sub>`, `eventcore.egghunt.leaderboard` (default true), `eventcore.disaster.admin`, `eventcore.disaster.<sub>`, `eventcore.disaster.status|join|leave` (default true), `eventcore.disaster.exempt` (never drafted), `eventcore.bypass` (ignores the command whitelist).

@@ -2,10 +2,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>me.smpcore</groupId>
-  <artifactId>SMPCore</artifactId>
-  <version>1.4.5</version>
+  <groupId>com.eventcore</groupId>
+  <artifactId>EventCore</artifactId>
+  <version>1.0.0</version>
   <packaging>jar</packaging>
+  <name>EventCore</name>
 
   <properties>
     <maven.compiler.release>21</maven.compiler.release>
@@ -20,6 +21,7 @@
   </repositories>
 
   <dependencies>
+    <!-- Adventure + MiniMessage are bundled with the Paper API -->
     <dependency>
       <groupId>io.papermc.paper</groupId>
       <artifactId>paper-api</artifactId>
@@ -29,11 +31,17 @@
   </dependencies>
 
   <build>
-    <finalName>SMPCore-${project.version}</finalName>
+    <finalName>EventCore-${project.version}</finalName>
     <resources>
       <resource>
         <directory>src/main/resources</directory>
         <filtering>true</filtering>
+        <includes><include>plugin.yml</include></includes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <excludes><exclude>plugin.yml</exclude></excludes>
       </resource>
     </resources>
     <plugins>
@@ -41,6 +49,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.13.0</version>
+        <configuration><parameters>true</parameters></configuration>
       </plugin>
     </plugins>
   </build>

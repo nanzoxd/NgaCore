@@ -1,168 +1,151 @@
-name: SMPCore
-softdepend: [WorldGuard]
+name: EventCore
 version: '${project.version}'
-main: me.smpcore.SMPCore
+main: com.eventcore.EventCorePlugin
 api-version: '1.21'
-description: All-in-one SMP rules plugin with a GUI for every feature.
+folia-supported: true
+softdepend: [SkinsRestorer]
+description: Scheduled server events, the Ritual Creator and airdrop crates, altars, player hunts and bounties.
+authors: [EventCore]
+
 commands:
-  smp:
-    description: Open the settings menu or run an admin sub-command.
-    usage: /smp [reload|itemban|help]
-    aliases: [smpcore, smpsettings]
-    permission: smpcore.admin
-  ban:
-    description: Ban a player. Replaces the vanilla /ban.
-    usage: /ban <player> <duration> [reason]
-    permission: smpcore.tempban
-  unban:
-    description: Unban a player.
-    usage: /unban <player>
-    permission: smpcore.tempban
-  pardon:
-    description: Unban a player. Replaces the vanilla /pardon.
-    usage: /pardon <player>
-    permission: smpcore.tempban
-  spawn:
-    description: Teleport to spawn.
-    permission: smpcore.spawn
-  setspawn:
-    description: Set the spawn where you stand.
-    permission: smpcore.admin
-  warp:
-    description: Teleport to a warp.
-    usage: /warp <name>
-    permission: smpcore.warp
-  warps:
-    description: List the warps.
-    permission: smpcore.warp
-  setwarp:
-    description: Create a warp where you stand.
-    usage: /setwarp <name>
-    permission: smpcore.admin
-  delwarp:
-    description: Delete a warp.
-    usage: /delwarp <name>
-    permission: smpcore.admin
-  vanish:
-    description: Hide from everyone (tab list, chat completion, server list).
-    usage: /vanish [player]
-    aliases: [v]
-    permission: smpcore.vanish
-  freeze:
-    description: Freeze or unfreeze a player.
-    usage: /freeze <player>
-    permission: smpcore.freeze
-  invsee:
-    description: Look into a player's inventory.
-    usage: /invsee <player>
-    permission: smpcore.invsee
-  endersee:
-    description: Look into a player's ender chest.
-    usage: /endersee <player>
-    permission: smpcore.invsee
-  tempban:
-    description: Temporary bans with a GUI and custom messages.
-    usage: /tempban <ban|unban|list|history|gui>
-    aliases: [tban]
-    permission: smpcore.tempban
-  settings:
-    description: Open the settings menu (same as /smp).
-    usage: /settings
-    permission: smpcore.admin
-  punish:
-    description: Open the punish menu (ban, mute, kick, warn).
-    usage: /punish <player>
-    permission: smpcore.tempban
-  pvp:
-    description: Toggle your own PvP.
-    usage: /pvp
-  msg:
-    description: Send a private message.
-    usage: /msg <player> <message>
-    aliases: [tell, w, whisper, pm]
-  reply:
-    description: Reply to your last private message.
-    usage: /reply <message>
-    aliases: [r]
-  announce:
-    description: Animated title, chat line and sounds for everyone.
-    usage: /announce <message>
-    aliases: [ann]
-    permission: smpcore.announce
-  broadcast:
-    description: Chat-only message for everyone (no title).
-    usage: /broadcast <message>
-    aliases: [bc, bcast]
-    permission: smpcore.broadcast
+  eventcore:
+    description: EventCore admin command
+    usage: /<command> <start|force|rig|stop|list|reload|gui|schedule|airdrop>
+    aliases: [ec]
+  ritual:
+    description: Ritual menu - /ritual schedule opens the ritual scheduler
+    usage: /<command> [schedule | list | cancel <id>]
+    permission: eventcore.ritual
+  ritualcreator:
+    description: Open the Ritual Creator
+    usage: /<command>
+    aliases: [rcreator, creator]
+    permission: eventcore.ritual
+    permission-message: You do not have permission.
+
+  altar:
+    description: Custom crafting altars (spawn presets, recipes)
+    usage: /<command> <spawn|remove|list|recipes|bind|stop|reload>
+    aliases: [altars]
+    permission: eventcore.altar
+
+  playerhunt:
+    description: Hunt players - live coordinates in a bossbar and in chat
+    usage: /<command> [player ...] | stop [player|all] | list
+    aliases: [phunt]
+    permission: eventcore.playerhunt
+  bountyadd:
+    description: Place a bounty on a player (opens the reward GUI)
+    usage: /<command> <player>
+    aliases: [bounty]
+    permission: eventcore.bounty
+  bountystop:
+    description: Cancel a bounty (reward goes back to its creator)
+    usage: /<command> [player|all]
+    permission: eventcore.bounty
+  bountylist:
+    description: List active bounties
+    usage: /<command>
+    permission: eventcore.bounty
+  egghunt:
+    description: Egg Hunt event
+    usage: /<command> <start|stop|reset|leaderboard|reload|setarea|addspawn|clearspawns>
+    aliases: [eh]
+  disaster:
+    description: Natural Disaster event
+    usage: /<command> <start|stop|reset|setcenter|setarena|setexit|status|reload|join|leave>
+    aliases: [nd]
+
 permissions:
-  smpcore.announce:
-    description: Use /announce.
+  eventcore.egghunt.admin:
+    description: All Egg Hunt admin commands
     default: op
-  smpcore.broadcast:
-    description: Use /broadcast.
+    children:
+      eventcore.egghunt.start: true
+      eventcore.egghunt.stop: true
+      eventcore.egghunt.reset: true
+      eventcore.egghunt.reload: true
+      eventcore.egghunt.setarea: true
+      eventcore.egghunt.addspawn: true
+      eventcore.egghunt.clearspawns: true
+  eventcore.egghunt.start: {default: op}
+  eventcore.egghunt.stop: {default: op}
+  eventcore.egghunt.reset: {default: op}
+  eventcore.egghunt.reload: {default: op}
+  eventcore.egghunt.setarea: {default: op}
+  eventcore.egghunt.addspawn: {default: op}
+  eventcore.egghunt.clearspawns: {default: op}
+  eventcore.egghunt.leaderboard: {default: true}
+  eventcore.disaster.admin:
+    description: All Natural Disaster admin commands
     default: op
-  smpcore.vanish:
-    description: Use /vanish.
-    default: op
-  smpcore.vanish.see:
-    description: See vanished players.
-    default: op
-  smpcore.freeze:
-    description: Use /freeze and get frozen-player alerts.
-    default: op
-  smpcore.freeze.bypass:
-    description: Can't be frozen.
-    default: op
-  smpcore.invsee:
-    description: Use /invsee and /endersee (view only).
-    default: op
-  smpcore.invsee.modify:
-    description: Take and move items in /invsee and /endersee.
-    default: op
-  smpcore.randomtp.bypass:
-    description: Not sent to a random spot on first join.
+    children:
+      eventcore.disaster.start: true
+      eventcore.disaster.stop: true
+      eventcore.disaster.reset: true
+      eventcore.disaster.reload: true
+      eventcore.disaster.setcenter: true
+      eventcore.disaster.setarena: true
+      eventcore.disaster.setexit: true
+  eventcore.disaster.start: {default: op}
+  eventcore.disaster.stop: {default: op}
+  eventcore.disaster.reset: {default: op}
+  eventcore.disaster.reload: {default: op}
+  eventcore.disaster.setcenter: {default: op}
+  eventcore.disaster.setarena: {default: op}
+  eventcore.disaster.setexit: {default: op}
+  eventcore.disaster.status: {default: true}
+  eventcore.disaster.join: {default: true}
+  eventcore.disaster.leave: {default: true}
+  eventcore.disaster.exempt:
+    description: Never drafted into the Natural Disaster
     default: false
-  smpcore.spawn:
-    description: Use /spawn.
+  eventcore.admin:
+    description: All EventCore admin commands
+    default: op
+    children:
+      eventcore.start: true
+      eventcore.force: true
+      eventcore.rig: true
+      eventcore.stop: true
+      eventcore.list: true
+      eventcore.reload: true
+      eventcore.gui: true
+      eventcore.schedule: true
+      eventcore.airdrop: true
+      eventcore.ritual: true
+      eventcore.altar: true
+      eventcore.playerhunt: true
+      eventcore.bounty: true
+      eventcore.egghunt.admin: true
+      eventcore.disaster.admin: true
+  eventcore.start: {default: op}
+  eventcore.force: {default: op}
+  eventcore.rig: {default: op}
+  eventcore.stop: {default: op}
+  eventcore.list: {default: op}
+  eventcore.reload: {default: op}
+  eventcore.gui: {default: op}
+  eventcore.schedule: {default: op}
+  eventcore.airdrop: {default: op}
+  eventcore.ritual:
+    description: Use the Ritual Creator
+    default: op
+  eventcore.bypass:
+    description: Bypass event restrictions (blocked commands, anonymous reveal)
+    default: op
+  eventcore.altar:
+    description: Manage altars and altar recipes
+    default: op
+  eventcore.altar.use:
+    description: Craft at an altar
     default: true
-  smpcore.warp:
-    description: Use /warp and /warps.
-    default: true
-  smpcore.spawn.bypass:
-    description: No wait before teleporting to spawn or a warp.
-    default: false
-  smpcore.admin:
-    description: Settings GUI and admin commands.
+  eventcore.playerhunt:
+    description: Start, stop and list player hunts
     default: op
-  smpcore.tempban:
-    description: TempBan commands and GUI.
+  eventcore.bounty:
+    description: Place, cancel and list bounties
     default: op
-  smpcore.bypass.damage:
+  eventcore.bounty.exempt:
+    description: Never chosen as the new target when a bounty is transferred
     default: false
-  smpcore.bypass.cooldown:
-    default: false
-  smpcore.bypass.itemban:
-    default: false
-  smpcore.bypass.potion:
-    default: false
-  smpcore.bypass.enchant:
-    default: false
-  smpcore.bypass.dimension:
-    default: false
-  smpcore.bypass.deathban:
-    default: false
-  smpcore.bypass.xaero:
-    description: Never restricted by the Xaero minimap fair play / disable switches.
-    default: false
-  smpcore.chat.bypass:
-    description: Skip cooldown, duplicate, word, caps and link filters.
-    default: false
-  smpcore.bypass.combat:
-    description: Never combat tagged, no command blocking, no logout penalty, safe zones don't stop you.
-    default: false
-  smpcore.bypass.tweaks:
-    description: Skip block placing/breaking and vault rules.
-    default: false
-  smpcore.maintenance.bypass:
-    description: Join while maintenance mode is on.
-    default: op

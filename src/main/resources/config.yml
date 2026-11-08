@@ -1,393 +1,116 @@
-# ──────────────────────────────────────────────────────────────
-#  SMPCore config. Almost everything here can be changed in-game
-#  with /smp. Text uses MiniMessage: https://docs.advntr.dev/minimessage
-# ──────────────────────────────────────────────────────────────
-prefix: "<#6981ab>[</#6981ab><bold><gradient:#C3C3C3:#E7E7E7:#E7E7E7>ꜱᴍᴘ</gradient></bold><#6981ab>]</#6981ab> "
-
-# ── Damage limiters ───────────────────────────────────────────
-# max = highest final damage (in HP, 2 HP = 1 heart) one hit can deal.
-damage-limiters:
-  enabled: true
-  players-only: true
-  limits:
-    mace:            { enabled: true,  max: 20.0 }
-    spear:           { enabled: false, max: 20.0 }
-    trident:         { enabled: false, max: 20.0 }
-    bow:             { enabled: false, max: 20.0 }
-    crossbow:        { enabled: false, max: 20.0 }
-    tnt:             { enabled: false, max: 20.0 }
-    tnt_minecart:    { enabled: true,  max: 8.0 }
-    end_crystal:     { enabled: false, max: 20.0 }
-    block_explosion: { enabled: false, max: 20.0 }
-    wind_charge:     { enabled: false, max: 20.0 }
-
-# ── Cooldowns (shown on the item itself in-game) ──────────────
-cooldowns:
-  enabled: true
-  items:
-    mace:                   { enabled: true,  seconds: 60.0 }
-    spear:                  { enabled: false, seconds: 10.0 }
-    wind_charge:            { enabled: false, seconds: 5.0 }
-    ender_pearl:            { enabled: false, seconds: 15.0 }
-    golden_apple:           { enabled: false, seconds: 10.0 }
-    enchanted_golden_apple: { enabled: false, seconds: 60.0 }
-    chorus_fruit:           { enabled: false, seconds: 10.0 }
-    firework_rocket:        { enabled: false, seconds: 5.0 }
-    trident:                { enabled: false, seconds: 10.0 }
-  message: "<#FFAA33><item></#FFAA33> <#9babc7>ready in</#9babc7> <#FFE45C><time>s"
-  sound: "entity.villager.no"
-
-# ── Item ban (also used by the Spear Ban menu)
-# whitelist: custom weapons that stay allowed even when their base item is banned. Add them in /smp -> Spear Ban ->
-# Custom weapon whitelist, or hold one and run /smp whitelist add. Each entry matches by material plus the details
-# it recorded (model, cmd = custom model data, name, tags). ──────────────
-item-ban:
-  enabled: true
-  remove-from-inventories: true   # scan inventories every 5s and delete banned items
-  block-use: true
-  block-placing: true
-  block-containers: true          # banned items can't be put into or taken out of chests, hoppers and so on
-  banned: []                      # whole item types
-  exact: []                       # exact items (enchanted books, potions, named items), managed in the menu
-  whitelist: []                   # custom weapons allowed even if their base item is banned (managed in the menu)
-  message: "That item is <#FF5555>banned</#FF5555> on this server."
-
-# ── Netherite ban (Netherite menu) ────────────────────────────
-# Only armour and tools (and the spear). A banned piece can't be upgraded at the Smithing Table.
-# Players can still hold, wear and use netherite they already have. Bypass: smpcore.bypass.itemban
-netherite-ban:
-  enabled: true
-  items: []          # e.g. [NETHERITE_HELMET, NETHERITE_SWORD]
-  message: "That netherite upgrade is <#FF5555>banned</#FF5555> on this server."
-
-# ── Insta Restock (switch in /smp -> Util) ────────────────────
-# Villagers and wandering traders restock the moment a trade screen opens or a trade is made.
-instarestock:
+# EventCore main configuration. Everything here is also editable in-game: /eventcore gui
+# Gradient palette used by the <g> tag in every message, title and bossbar.
+# The two palettes everything is coloured with (titles, chat, GUIs, bossbars, holograms):
+#   peach: #fffbf0 #fff1e0 #ffe4d5 #ffd7ca #ffcfca     gold: #d8b04a #e8c670 #f1d58f #f7e2ad #fff0cc
+palette:            # peach -> gold (chat, titles)
+  - "#fffbf0"
+  - "#ffe4d5"
+  - "#ffcfca"
+  - "#f1d58f"
+  - "#d8b04a"
+# Bossbars use this gradient (<bb> tag): "Lootdrop Falling | 10 20 30"
+bossbar-gradient: ["#d8b04a", "#fff0cc", "#d8b04a"]
+# The [EventCore] label (chat prefix in messages.yml and the /eventcore gui title)
+eventcore-gradient: ["#808080", "#C4C4C4", "#808080"]
+# GUI colours (peach + gold only)
+theme:
+  main: "#d8b04a"
+  soft: "#ffd7ca"
+  good: "#f1d58f"
+  bad: "#ffcfca"
+  warn: "#e8c670"
+  info: "#ffe4d5"
+  white: "#fffbf0"
+style:
+  flatten-colors: true   # chat uses only the palette: red/green/gray... tags become text-color
+  text-color: "#ffd7ca"
+  small-caps: true      # convert template text to small caps (placeholder values are left alone)
+  strip-bold: true      # never render bold
+  title-times:          # ticks
+    fade-in: 10
+    stay: 70
+    fade-out: 20
+# Timezone for scheduled events (IANA name, e.g. Europe/Berlin, America/New_York)
+timezone: "Asia/Kolkata"   # IST. Event schedules, /ritual schedule and countdown times use this zone
+# How running events are shown to players: BOSSBAR, ACTIONBAR or BOTH (an event can override with display-mode)
+event-display: BOSSBAR
+max-concurrent-events: 2
+# Groups of events that can never run together (ids or aliases)
+incompatible-events:
+  - [anonymous, glow]
+  - [locator_bar, random_target]   # both control the locator bar gamerule
+sounds:
+  # default sound for chat broadcasts (a message can override it with its own sound section)
+  broadcast: {sound: "block.note_block.chime", volume: 0.6, pitch: 1.4}
+particles:
+  compute-async: false  # compute particle offsets off-thread (spawn is always on the region thread)
+  force: false          # show particles to players beyond normal range
+# Discord webhook notifications (mini events, lootdrops, rituals). Set enabled: true and paste the webhook URL.
+discord:
   enabled: false
-  wandering-traders: true
-  disable-price-penalty: true     # also resets demand so prices go back to normal
-  cooldown-seconds: 0             # 0 = instant every time
-  villager-blacklist: []          # professions to skip, e.g. [librarian]
+  webhook-url: ""
+  username: "EventCore"
+  avatar-url: "https://kommodo.ai/i/VdcG7kcMYqx3eFvPyeTB"
+  server-name: "My Server"
+  mention: ""              # pinged on event start / lootdrop landed / ritual start, e.g. "<@&123456789>" or "@everyone"
+  notify:            # start webhooks only, one per event
+    event-start: true
+    airdrop-falling: true
+    ritual-start: true
+    schedule-warning: false
+    airdrop-landed: false
+    airdrop-opened: false
+    ritual-complete: false
+    ritual-stop: false
+    hunt-start: false      # reuses the webhook above and the 'event' thumbnail; no new webhook or image
+    bounty-start: false
+  thumbnails:        # small image in the corner (thumbnail only; altar webhook is sent once all 3 coords are revealed)
+    event: "https://kommodo.ai/i/VdcG7kcMYqx3eFvPyeTB"
+    ritual: "https://plain-apac-prod-public.komododecks.com/202610/19/hOZKF5MLRfe4SxIfm8ol/image.png"
+    lootdrop: "https://plain-apac-prod-public.komododecks.com/202610/19/f7kFK2IL9wvWHa3ogStY/image.png"
+    altar: "https://plain-apac-prod-public.komododecks.com/202610/19/oZ1H7gY55K5VoKy5bR7q/image.png"
+  colors:
+    start: "#f1d58f"
+    end: "#ffcfca"
+    warn: "#e8c670"
+    airdrop: "#d8b04a"
+    ritual: "#ffd7ca"
 
-# ── Combat (/smp -> PVP -> Combat) ────────────────────────────
-# Hitting or being hit by a player starts the timer. Action bar: "🕛 ᴄᴏᴍʙᴀᴛ : 20" in the [MSG] red (#850120).
-# While it runs: blocked commands are refused, logging out kills you, and you can't walk into a safe zone.
-# Players in a safe zone can't hit or be hit by other players. Bypass: smpcore.bypass.combat
-combat:
+# Mouse-control icons in every tooltip: "▆▆" with the pressed button lit (palette colours only)
+lore:
+  mouse:
+    active: "#d8b04a"
+    inactive: "#ffe4d5"
+    text: "#fffbf0"
+# Player Hunt: /playerhunt <player ...> | stop [player|all] | list
+playerhunt:
   enabled: true
-  seconds: 20                    # change in game with /smp combat seconds <n>
-  commands:
-    enabled: true
-    mode: blacklist              # blacklist = block the "blocked" list, whitelist = block everything except "allowed"
-    blocked: [spawn, warp, warps, home, homes, rtp, tpa, tpahere, tpaccept, tpacancel, back, ec, enderchest, vanish, v, logout]
-    allowed: [msg, tell, w, whisper, pm, reply, r]
-  logout:
-    punish: true                 # logging out while tagged
-    kill: true                   # kill the player (items drop)
-    broadcast: true
-    exempt-kick: true            # staff kicks are not punished
-  safe-zone:
-    enabled: true
-    spawn-radius: 25             # blocks around /spawn that are safe (0 = off). Set with /smp safezone spawn <radius>
-    block-pvp: true              # no player damage in a safe zone
-    block-entry: true            # tagged players can't walk, pearl or chorus into a safe zone
-    zones: {}                    # made with /smp safezone add <name> <radius> (where you stand)
-    auto:                        # safe zones that are set up automatically
-      worldguard: true           # every WorldGuard region with the flag pvp: deny is a safe zone (needs WorldGuard)
-      warps-radius: 0            # make every /setwarp spot a safe zone with this radius (0 = off)
-      notify: true               # tell players when they enter or leave a safe zone
-  rejoin:                        # "rejoin time": a player who disconnects in combat gets a while to log back in
-    enabled: false               #   in time: no penalty. Too late: killed (when they next join, see README), items drop where they logged out
-    seconds: 30                  #   how long they have (change with /smp combat rejoin <seconds>)
-    retag: true                  #   returning players are tagged again for the combat time they had left
-    broadcast: true              #   announce the disconnect and when time runs out
-  titles: true                   # show the big title text for tagged / ended
-  messages:
-    bar: "<#850120>🕛 ᴄᴏᴍʙᴀᴛ : <time>"
-    tagged: "<#9babc7>You are in <#850120>combat</#850120>. <#FF5555>Don't log out.</#FF5555>"
-    ended: "<#9babc7>You are <#55FF7F>out of combat</#55FF7F>. <#9babc7>You can use commands again."
-    rejoin-quit: "<#FF5555><player> <#9babc7>disconnected in <#850120>combat</#850120>. They have <#FFE45C><time>s</#FFE45C> to rejoin"
-    rejoin-expired: "<#FF5555><player> <#9babc7>did not rejoin in time <#850120>(combat logout)"
-    rejoin-ok: "<#9babc7>Welcome back! You rejoined in time, <#55FF7F>no penalty</#55FF7F>. <#850120>Combat</#850120> <#9babc7>resumes for <#FFE45C><time>s"
-    rejoin-ok-title: "<#55FF7F><bold>ʏᴏᴜ ʀᴇᴊᴏɪɴᴇᴅ ɪɴ ᴛɪᴍᴇ"
-    rejoin-ok-subtitle: "<#9babc7>No penalty"
-    rejoin-late: "<#9babc7>You did not rejoin in time after disconnecting in <#850120>combat</#850120> <#9babc7>and were <#FF5555>killed</#FF5555>."
-    rejoin-late-title: "<#FF5555><bold>ᴄᴏᴍʙᴀᴛ ʟᴏɢᴏᴜᴛ"
-    rejoin-late-subtitle: "<#9babc7>You did not come back in time"
-    ended-title: "<#55FF7F><bold>ᴏᴜᴛ ᴏꜰ ᴄᴏᴍʙᴀᴛ"
-    ended-subtitle: "<#9babc7>You are safe now"
-    tagged-title: "<#850120><bold>ɪɴ ᴄᴏᴍʙᴀᴛ"
-    tagged-subtitle: "<#FF5555>Don't log out"
-    safe-enter: "<#55FF7F>You entered a safe zone <#9babc7>· PvP is off here"
-    safe-leave: "<#FF5555>You left the safe zone <#9babc7>· PvP is on"
-    command: "<#FF5555>/<command></#FF5555> <#9babc7>is blocked in combat.</#9babc7> <#FFAA33><time>s</#FFAA33> <#9babc7>left."
-    logout: "<#FF5555><player></#FF5555> <#9babc7>logged out in</#9babc7> <#850120>combat</#850120><#9babc7>."
-    safe-entry: "<#9babc7>The safe zone is <#FF5555>closed</#FF5555> <#9babc7>while you are in combat.</#9babc7> <#FFAA33><time>s</#FFAA33> <#9babc7>left."
-    safe-pvp: "<#9babc7>PvP is <#FF5555>off</#FF5555> <#9babc7>in the safe zone."
-
-# ── Grace (switch in /smp -> PVP -> Grace) ───────────────────
-# Resistance IV + Saturation for 30 minutes and a sidebar clock "🕛 Grace / 30:00".
-# The clock is green, then yellow, orange and red as time runs out.
-# Time only counts while the player is online. /smp grace start <player|all> restarts it.
-grace:
-  enabled: false
-  minutes: 30
-  on-join: true                  # every join gives a fresh grace period
-  on-respawn: false              # restart grace after every death
-  resistance: { enabled: true, level: 4 }
-  saturation: { enabled: true }
-  scoreboard: { enabled: true, icon: "🕛", title: "ɢʀᴀᴄᴇ", pad: 3 }   # small-caps title, time centred with pad spaces
-
-# ── Spawn and warps (/spawn /setspawn /warp /warps /setwarp /delwarp) ──
-warps:
-  enabled: true                  # /warp /warps /setwarp /delwarp (switch in /smp -> Util -> Warps)
-spawn:
-  enabled: true                  # /spawn /setspawn (switch in /smp -> Util -> Spawn)
-  delay-seconds: 5               # how many seconds players wait before teleporting (0 = instant)
-  cancel-on-move: true           # moving cancels the teleport
-  cancel-on-damage: true         # taking damage cancels it too
-  respawn-at-spawn: false        # respawn at /spawn when the player has no bed or anchor
-
-# ── Random TP on first join ──────────────────────────────────
-# New players (first join only) are sent to a random safe spot within radius blocks of the centre.
-random-tp:
-  enabled: false
-  radius: 5000
-  center: spawn                  # spawn, world (the world spawn) or "x,z" such as "0,0"
-  world: ""                      # blank = the main world
-  tries: 30                      # spots to try before giving up (new players then stay where they are)
-
-# ── Staff tools (/vanish /freeze /invsee /endersee) ───────────
-# Vanish hides you from players, the tab list, name completion, the server list, /list and join/leave messages.
-# Players with smpcore.vanish.see still see vanished staff.
-staff:
-  vanish:
-    enabled: true
-  freeze:
-    enabled: true
-    bar: "You are frozen. Don't log out."
-    subtitle: "A staff member is checking you. Don't log out."
-    message: "Don't log out or you may be banned."
-    allowed-commands: [msg, reply, r, w]
-    quit-command: ""             # run when a frozen player logs out, e.g. "tempban ban <player> 7d Left while frozen"
-  invsee:
-    enabled: true
-
-# ── Potion limiter ────────────────────────────────────────────
-# effects: -1 = unlimited, 0 = banned, n = max level allowed (1 = level I)
-potion-limiter:
+  max-targets: 10
+  update-ticks: 20          # bossbar coordinates refresh
+  broadcast-seconds: 30     # chat update with every target's coordinates
+  stop-on-death: false      # end the hunt on a target when they die
+  bossbar: {color: YELLOW, style: PROGRESS}
+  sound: {sound: "block.note_block.chime", volume: 0.5, pitch: 1.2}
+# Bounty Hunt: /bountyadd <player> (GUI) | /bountystop [player|all] | /bountylist
+bounty:
   enabled: true
-  block-brewing: true            # stands refuse to brew banned potions
-  block-use: true                # can't drink / splash / lingering / tipped arrows
-  allow-command-effects: true    # /effect give and plugins can still apply banned effects
-  message: "That potion effect is <#FF5555>limited</#FF5555> on this server."
-  effects:
-    strength: 1
-    speed: 2
-
-# ── Enchantment limiter ───────────────────────────────────────
-# limits: -1 = unlimited, 0 = banned, n = max level. item-limits override by item (wildcards ok).
-enchant-limiter:
-  enabled: true
-  limits:
-    protection: 3
-  item-limits: {}
-  #  item-limits:
-  #    "*_SWORD": { sharpness: 4 }
-  message: "That enchantment is <#FF5555>over the limit</#FF5555> on this server."
-
-# ── Dimension ban ─────────────────────────────────────────────
-dimension-ban:
-  nether: false
-  end: false
-  block-teleports: true
-  message: "<#FFAA33><dimension></#FFAA33> is currently <#FF5555>closed</#FF5555>."
-
-# ── Death ban ─────────────────────────────────────────────────
-death-ban:
-  enabled: false
-  duration: "1h"
-  pvp-only: false
-  spectator: false                # true = spectator mode for "duration" instead of a ban
-  message: "You died. Come back when your ban ends."
-
-# ── TempBan ───────────────────────────────────────────────────
-tempban:
-  default-reason: "No reason given"
-  broadcast: true
-  broadcast-message: "<#FF5555><player></#FF5555> <#9babc7>was banned for</#9babc7> <#FFAA33><duration></#FFAA33> <#9babc7>(<reason>)"
-  # Where banned players can appeal (shown on the ban screen, e.g. your Discord invite).
-  appeal: "discord.gg/yourserver"
-  # Ban animation: a giant mace slams the player (red shockwave), then they are kicked with the ban screen.
-  animation:
-    enabled: true
-    height: 12                  # blocks above the player where the mace appears
-    scale: 5                    # size of the mace
-    lead: 5                     # blocks in front of the player the mace starts from (so they see its face)
-    windup-ticks: 14
-    kick-delay-ticks: 30        # wait after the slam before the kick screen
-    ground-radius: 6            # ground blocks within this many blocks jump when the mace lands (0 = off)
-    sound-radius: 24            # only players this close hear the animation sounds
-  # Kick / login screen. Placeholders: <reason> <remaining> <expires> <duration> <staff> <appeal>
-  # <remaining> is calculated when the player joins or is kicked, so it is always the time left.
-  screen:
-    - "<bold><#FF5555>ʏᴏᴜ ᴀʀᴇ ʙᴀɴɴᴇᴅ</#FF5555></bold>"
-    - ""
-    - "<gradient:#9babc7:#6981ab>Reason</gradient> <#FF5555><reason>"
-    - "<gradient:#9babc7:#6981ab>Time left</gradient> <#FFAA33><remaining>"
-    - "<gradient:#9babc7:#6981ab>Duration</gradient> <#FFE45C><duration>"
-    - "<gradient:#9babc7:#6981ab>Expires</gradient> <#55B8FF><expires>"
-    - "<gradient:#9babc7:#6981ab>Banned by</gradient> <#cdd5e3><staff>"
-    - ""
-    - "<gradient:#cdd5e3:#9babc7>Appeal at</gradient> <#55FF7F><appeal>"
-  durations: ["1h", "6h", "12h", "1d", "3d", "7d", "14d", "30d", "perm"]
-  # Button name -> full custom message shown to the player. /tempban ban <p> <time> <preset-name> works too.
-  presets:
-    Cheating: "Unfair advantage (hacked client or exploit)."
-    Griefing: "Destroying or stealing other players' builds."
-    Spam: "Spamming chat or advertising."
-    Toxicity: "Harassment, hate speech or toxic behaviour."
-    Exploiting: "Abusing a bug or duplication glitch."
-    Ban evading: "Joining on an alt to dodge a ban."
-
-# ── Chat moderation ───────────────────────────────────────────
-chat:
-  enabled: true
-  format:
-    enabled: true
-    text: "<#9babc7><player> <#cdd5e3>› <#cdd5e3><message>"
-  cooldown: { enabled: true, seconds: 2.0 }
-  duplicate: { enabled: true }
-  caps: { enabled: true, min-length: 8, max-percent: 70 }
-  links: { enabled: false }
-  blocked-words: { enabled: true, action: CENSOR, words: [] }   # action: CANCEL or CENSOR
-  mentions: { enabled: true, window-seconds: 60 }
-  private-messages: { enabled: true }
-  join-leave: { enabled: true }
-  death-messages: { enabled: true, combat-window-seconds: 10, kill-icon: "⚔" }
-  hide-advancements: true
-  messages:
-    cooldown: "<#9babc7>Slow down <#FFAA33><time>s</#FFAA33> left."
-    duplicate: "<#9babc7>You already sent that. <#55B8FF>Say something new."
-    blocked-word: "<#FF5555>Watch your language."
-    links: "<#FF5555>Links are not allowed in chat."
-    pm-usage: "<#9babc7>Usage <#55B8FF>/msg <player> <message>"
-    pm-offline: "<#FF5555>That player isn't online."
-    pm-nobody: "<#9babc7>Nobody to reply to."
-    pm-sent: "<#850120>[MSG] <#cdd5e3>you <#9babc7>→ <#55B8FF><target><#9babc7>: <#cdd5e3><message>"
-    pm-received: "<#850120>[MSG] <#55B8FF><sender> <#9babc7>→ <#cdd5e3>you<#9babc7>: <#cdd5e3><message>"
-    join: "<#55FF7F>→ <#cdd5e3><player> <#9babc7>joined"
-    leave: "<#FF5555>← <#cdd5e3><player> <#9babc7>left"
+  max-active: 5
+  broadcast-seconds: 30       # coordinates in chat
+  save-interval-seconds: 10   # bounties.yml (also saved on every change and on shutdown)
+  environment-death: CONTINUE # target dies without a killer: CONTINUE the bounty or RETURN the reward to its creator
+  timer: {default-minutes: 30, min-minutes: 1, max-minutes: 240, step-minutes: 1}
+  disconnect:
+    grace-seconds: 120        # target offline longer than this -> bounty moves to someone else
+    pause-timer: true         # the survival timer stands still while the target is offline
+    action: TRANSFER          # TRANSFER to another player, or CANCEL (reward returns to its creator)
+  transfer:
+    keep-remaining-time: true # false = the new target gets the full timer
+    exclude-creative: true
+    exclude-spectator: true
+    exclude-permission: "eventcore.bounty.exempt"
+  bossbar: {color: PINK, style: PROGRESS}
   sounds:
-    mention:         { sound: "block.note_block.chime", volume: 1.0, pitch: 1.6 }
-    private-message: { sound: "block.note_block.bell",  volume: 1.0, pitch: 1.4 }
-    pm-sent:         { sound: "block.note_block.bell",  volume: 0.4, pitch: 1.9 }
-    blocked:         { sound: "block.vault.insert_item_fail", volume: 1.0, pitch: 1.0 }
-
-# ── Announcements ─────────────────────────────────────────────
-# /announce <message>  animated title + message under it + chat line + title sounds
-# /broadcast <message> chat line only (no title), with its own sound
-# A subtitle is one line in Minecraft, so a long message is word-wrapped (wrap-chars) and the lines
-# are shown one after another under the title, page-seconds each. The full text is always in chat.
-announce:
-  enabled: true
-  title: "ᴀɴɴᴏᴜɴᴄᴇᴍᴇɴᴛ"
-  # colour preset: in /smp -> Administrator -> Announcements press Q (next) or Ctrl+Q (previous) over the bell.
-  # gradient = title and chat label (first to last letter), text = message under the title and in chat.
-  # Add your own below, any name.
-  preset: ice
-  presets:
-    ice:     { gradient: ["#00EEFF", "#D5FBFF", "#D5FBFF"], text: "#D5FBFF" }
-    gold:    { gradient: ["#FFB300", "#FFF1B8", "#FFF1B8"], text: "#FFF1B8" }
-    crimson: { gradient: ["#FF2A4D", "#FFC9D2", "#FFC9D2"], text: "#FFC9D2" }
-    emerald: { gradient: ["#00E676", "#CCFFE3", "#CCFFE3"], text: "#CCFFE3" }
-    violet:  { gradient: ["#A855FF", "#EBD6FF", "#EBD6FF"], text: "#EBD6FF" }
-    sunset:  { gradient: ["#FF5E62", "#FF9966", "#FFF0C2"], text: "#FFF0C2" }
-    royal:   { gradient: ["#3B6BFF", "#C4D4FF", "#C4D4FF"], text: "#C4D4FF" }
-  glint: { enabled: true, period-ticks: 50, width: 0.22 }   # white shine sweeping over the title
-  wrap-chars: 32
-  page-seconds: 4.0
-  chat-format: "<label> <#9babc7>→ <message>"          # <label> = title gradient, <message> = text colour
-  broadcast-format: "<label> <#9babc7>→ <message>"
-  # played one after another when /announce runs; delay is in ticks (20 = 1 second). Add as many as you like.
-  title-sounds:
-    - { sound: "block.beacon.activate",   volume: 1.0, pitch: 1.4, delay: 0 }
-    - { sound: "block.note_block.chime",  volume: 1.0, pitch: 1.6, delay: 6 }
-    - { sound: "entity.player.levelup",   volume: 0.7, pitch: 1.3, delay: 12 }
-  # played by /broadcast (chat only)
-  broadcast-sound: { sound: "block.note_block.pling", volume: 1.0, pitch: 1.5 }
-
-# ── Xaero's Minimap / World Map ───────────────────────────────
-# Replaces XaeroForceDisabler (remove that plugin). Toggle both in /smp -> Xaero Minimap.
-#   fair-mode: Xaero "fair play" (radar, cave mode etc. off)    disable: minimap and world map off
-# Priority: disable > fair-mode. Per-world overrides beat the global values, for example:
-#   worlds:
-#     world_nether: { fair-mode: true }
-xaero:
-  enabled: true
-  fair-mode: false
-  disable: false
-  worlds: {}
-
-# ── Dragon health (vanilla 200, max 1024) ─────────────────────
-dragon-health:
-  enabled: false
-  health: 600.0
-
-# ── Punishments (/punish) ─────────────────────────────────────
-# Warning count -> temp-ban length. Uses the TempBan presets and durations above.
-punish:
-  escalation:
-    3: "1h"
-    5: "1d"
-    7: "perm"
-
-# ── Tweaks (switch them in /smp -> Gameplay Tweaks / Protection and Rules) ──
-tweaks:
-  one-player-sleep: false
-  hide-locator-bar: false
-  totem-keep-effects: false
-  anvil-no-limit: false
-  armor-stand-arms: false
-  immortal-death-drops: false
-  kill-sound: false
-  kill-sound-key: "entity.player.levelup"
-  no-falling-blocks: false
-  no-fire-spread: false
-  no-explosion-grief: false
-  naked-protection: false
-  afk-protection: false
-  afk-seconds: 120
-  pvp-off: false
-  ban-tipped-arrows: false
-  disable-vaults: false
-  block-placing: false
-  block-breaking: false
-  maintenance: false
-  mob-disabler: false
-  mob-disabler-types: []          # e.g. [PHANTOM, CREEPER]
-  ban-crystal-pvp: false
-  ban-bed-bombing: false
-  ban-pearl: false                # pearls can't be thrown, but players can still carry them
-  evoker-totem-drop: true         # false = evokers no longer drop a totem of undying
-  ban-minecart: false
-  ban-villager-killing: false
-  disable-phantoms: false
-  no-mob-spawning: false
-  no-mob-griefing: false
-  book-limit: false
-  max-book-pages: 50
-  max-page-length: 256
-  ban-spawner-mining: false
-  player-head-drop: false
-  head-chance: 1.0
-  ban-explosives: false
-  ban-draining: false
-  void-protection: false
-  cobweb-decay: false
-  cobweb-seconds: 10
-  xp-clumps: false
-  apple-drops: false
-  apple-chance: 0.005
-  heavy-core-drop: false
-  heavy-core-chance: 0.02
+    start: {sound: "block.beacon.activate", volume: 0.5, pitch: 1.0}
+    victory: {sound: "ui.toast.challenge_complete", volume: 0.6, pitch: 1.0}
+    defeat: {sound: "entity.wither.spawn", volume: 0.3, pitch: 1.4}
+    coords: {sound: "block.note_block.chime", volume: 0.5, pitch: 1.2}
