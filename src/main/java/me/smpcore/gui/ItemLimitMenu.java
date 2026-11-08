@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import me.smpcore.SMPCore;
 import me.smpcore.module.ItemLimitModule;
+import me.smpcore.util.Items;
 import me.smpcore.util.Lore;
 import me.smpcore.util.Msg;
 import me.smpcore.util.Theme;
