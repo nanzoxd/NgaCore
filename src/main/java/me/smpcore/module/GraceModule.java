@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import me.smpcore.SMPCore;
+import me.smpcore.util.Icons;
 import me.smpcore.util.Msg;
 import me.smpcore.util.Theme;
 import org.bukkit.Bukkit;
@@ -27,7 +28,7 @@ import org.bukkit.scoreboard.Scoreboard;
 
 /**
  * Grace period: Resistance IV and Saturation for 30 minutes (configurable) plus a sidebar clock
- * "🕛 Grace / 30:00". Time only runs while the player is online and is saved on the player.
+ * "[clock] ɢʀᴀᴄᴇ / 30:00". Time only runs while the player is online and is saved on the player.
  */
 public final class GraceModule implements Listener {
     private final SMPCore plugin;
@@ -111,7 +112,8 @@ public final class GraceModule implements Listener {
         if (b == null) {
             b = Bukkit.getScoreboardManager().getNewScoreboard();
             Objective o = b.registerNewObjective("grace", Criteria.DUMMY,
-                    Theme.title(c().getString("grace.scoreboard.icon", "🕛") + " " + c().getString("grace.scoreboard.title", "ɢʀᴀᴄᴇ")));
+                    Theme.parse("<white><bold>" + icon() + " " + Theme.smallCaps(c().getString("grace.scoreboard.title", "ɢʀᴀᴄᴇ"))
+                            + "</bold></white>"));
             o.setDisplaySlot(DisplaySlot.SIDEBAR);
             o.numberFormat(NumberFormat.blank());
             boards.put(p.getUniqueId(), b);
@@ -123,6 +125,12 @@ public final class GraceModule implements Listener {
         score.setScore(1);
         score.numberFormat(NumberFormat.blank());
         score.customName(Theme.parse("<" + color(ms) + ">" + " ".repeat(Math.max(0, c().getInt("grace.scoreboard.pad", 3))) + fmt(ms)));
+    }
+
+    /** Sidebar icon: the vanilla clock sprite. The old default (a clock emoji the vanilla font can't draw) is replaced. */
+    private String icon() {
+        String i = c().getString("grace.scoreboard.icon", "");
+        return i == null || i.isBlank() || i.contains("\uD83D\uDD5B") ? Icons.CLOCK : i;
     }
 
     /** Clock colour by time left: green, then yellow, orange and red for the last stretch. */
@@ -161,12 +169,12 @@ public final class GraceModule implements Listener {
         }
     }
 
-    /** Every join gives a fresh grace period (grace.on-join). With it off, an unfinished grace just resumes. */
+    /** Grace is given on a player's first join only (grace.on-join). Later joins just resume an unfinished grace. */
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
         if (!enabled()) return;
-        if (c().getBoolean("grace.on-join", true)) {
+        if (!p.hasPlayedBefore() && c().getBoolean("grace.on-join", true)) {
             Bukkit.getScheduler().runTask(plugin, () -> start(p));
             return;
         }

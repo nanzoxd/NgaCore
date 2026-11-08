@@ -64,13 +64,28 @@ public final class Menus {
                 new ToggleMenu.Toggle(Material.CHEST, "Block chests", "item-ban.block-containers", "Banned items can't be put into or taken out of chests, hoppers and so on.")), parent);
     }
 
+    public static Gui antiHealth(SMPCore plugin, Player p, Supplier<Gui> parent) {
+        return new ToggleMenu(plugin, p, "Anti Health Indicator", List.of(
+                new ToggleMenu.Toggle(Material.ENDER_EYE, "Anti health indicator", "anti-health.enabled", "Master switch. Needs ProtocolLib" + (plugin.antiHealth != null ? "." : " (not installed!).")),
+                new ToggleMenu.Toggle(Material.APPLE, "Hide health", "anti-health.health", "Other entities' health is hidden from health bar mods."),
+                new ToggleMenu.Toggle(Material.SADDLE, "Keep vehicle health", "anti-health.ignore-vehicles", "The vehicle you ride still shows its bar (vanilla)."),
+                new ToggleMenu.Toggle(Material.BONE, "Keep tamed dog health", "anti-health.ignore-tamed-dogs", "Needed for the tail position, like vanilla."),
+                new ToggleMenu.Toggle(Material.DRAGON_HEAD, "Keep ender dragon health", "anti-health.ignore-enderdragon", "Filtering it breaks the death animation."),
+                new ToggleMenu.Toggle(Material.NETHER_STAR, "Keep wither health", "anti-health.ignore-wither", "Filtering it breaks the shine below half health."),
+                new ToggleMenu.Toggle(Material.IRON_BLOCK, "Iron golem cracks", "anti-health.show-irongolem-cracks", "Golem health is sent in steps of 25 so cracks still show."),
+                new ToggleMenu.Toggle(Material.GOLDEN_APPLE, "Hide absorption", "anti-health.absorption", "Other players' absorption hearts."),
+                new ToggleMenu.Toggle(Material.GLASS_BOTTLE, "Hide air", "anti-health.air", "Air bubbles of other entities."),
+                new ToggleMenu.Toggle(Material.COOKED_BEEF, "Hide saturation", "anti-health.saturation", "Your own saturation value."),
+                new ToggleMenu.Toggle(Material.ENCHANTING_TABLE, "Hide enchant seed", "anti-health.enchantseed", "Makes enchanting seed cracking harder.")), parent);
+    }
+
     public static Gui grace(SMPCore plugin, Player p, Supplier<Gui> parent) {
         return new ToggleMenu(plugin, p, "Grace", List.of(
                 new ToggleMenu.Toggle(Material.CLOCK, "Grace", "grace.enabled", "Master switch. Default 30 minutes (grace.minutes)."),
                 new ToggleMenu.Toggle(Material.NETHERITE_CHESTPLATE, "Resistance", "grace.resistance.enabled", "Resistance IV while grace runs (grace.resistance.level)."),
                 new ToggleMenu.Toggle(Material.GOLDEN_CARROT, "Saturation", "grace.saturation.enabled", "No hunger while grace runs."),
                 new ToggleMenu.Toggle(Material.OAK_SIGN, "Scoreboard", "grace.scoreboard.enabled", "Sidebar clock: Grace 30:00."),
-                new ToggleMenu.Toggle(Material.PLAYER_HEAD, "Every join", "grace.on-join", "Every player gets a fresh grace period each time they join."),
+                new ToggleMenu.Toggle(Material.PLAYER_HEAD, "First join", "grace.on-join", "Players get grace only the first time they join the server."),
                 new ToggleMenu.Toggle(Material.TOTEM_OF_UNDYING, "After respawn", "grace.on-respawn", "Grace starts again after every death.")), parent);
     }
 
@@ -201,6 +216,7 @@ public final class Menus {
             var meta = it.getItemMeta();
             List<net.kyori.adventure.text.Component> l = meta.lore() == null ? new ArrayList<>() : new ArrayList<>(meta.lore());
             l.add(Theme.parse(" "));
+            for (String pl : ItemBanModule.potionLines(it, "is banned")) l.add(Theme.parse(pl));
             l.add(Theme.parse(Theme.c(Theme.DIM, "Banned: ") + Theme.red("this exact item")));
             l.add(Theme.parse(Theme.c(Theme.MID, "Other variants stay allowed.")));
             l.add(Theme.parse(" "));
@@ -223,6 +239,9 @@ public final class Menus {
             boolean exactBan = plugin.itemBan.ban(it, wholeType);
             Msg.send(viewer, "Banned " + (exactBan ? Theme.yellow("this exact " + Theme.pretty(it.getType().name())) : Theme.yellow("every " + Theme.pretty(it.getType().name())))
                     + ". " + Theme.c(Theme.DIM, "Players can't pick it up, store it or take it from chests."));
+            if (exactBan) {
+                for (String pl : ItemBanModule.potionLines(it, "is banned")) Msg.send(viewer, pl + " " + Theme.c(Theme.MID, "(other tiers stay allowed)"));
+            }
             refresh();
         }
 

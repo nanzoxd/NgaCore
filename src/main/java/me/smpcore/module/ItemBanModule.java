@@ -126,6 +126,37 @@ public final class ItemBanModule implements Listener {
         return b.toString();
     }
 
+    /**
+     * For potions, splash and lingering potions and tipped arrows: one line per effect with its tier, for example
+     * "Strength · Tier 2 is banned". Empty for everything else (and for water, awkward and mundane potions).
+     */
+    public static List<String> potionLines(ItemStack it, String suffix) {
+        List<String> out = new ArrayList<>();
+        if (it == null || !(it.getItemMeta() instanceof PotionMeta pm)) return out;
+        String end = me.smpcore.util.Theme.c(me.smpcore.util.Theme.DIM, suffix);
+        if (pm.getBasePotionType() != null) {
+            String k = pm.getBasePotionType().getKey().getKey();
+            int tier = 1;
+            String extra = "";
+            if (k.startsWith("strong_")) {
+                tier = 2;
+                k = k.substring(7);
+            } else if (k.startsWith("long_")) {
+                extra = " · Extended";
+                k = k.substring(5);
+            }
+            if (!k.equals("water") && !k.equals("mundane") && !k.equals("thick") && !k.equals("awkward")) {
+                out.add(me.smpcore.util.Theme.yellow(me.smpcore.util.Theme.pretty(k)) + " " + me.smpcore.util.Theme.c(me.smpcore.util.Theme.DIM, "·") + " "
+                        + me.smpcore.util.Theme.red("Tier " + tier) + extra + " " + end);
+            }
+        }
+        for (PotionEffect e : pm.getCustomEffects()) {
+            out.add(me.smpcore.util.Theme.yellow(me.smpcore.util.Theme.pretty(e.getType().getKey().getKey())) + " " + me.smpcore.util.Theme.c(me.smpcore.util.Theme.DIM, "·") + " "
+                    + me.smpcore.util.Theme.red("Tier " + (e.getAmplifier() + 1)) + " " + end);
+        }
+        return out;
+    }
+
     /** True when the item has details beyond its type (enchants, potion, name ...), so it can be banned exactly. */
     public static boolean special(ItemStack it) {
         return sig(it).indexOf('|') >= 0;

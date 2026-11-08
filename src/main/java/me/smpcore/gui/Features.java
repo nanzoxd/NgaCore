@@ -87,6 +87,9 @@ public final class Features {
                         (p, back) -> LimiterDialogs.potions(plugin, p, potions, () -> back.get().open())),
                 new Feature(Category.PVP, Material.ENCHANTED_BOOK, "Enchant Limiter", "Dialog: search an enchant, set a limit.", "enchant-limiter.enabled",
                         (p, back) -> LimiterDialogs.enchants(plugin, p, enchants, () -> back.get().open())),
+                new Feature(Category.PVP, Material.ENCHANTED_GOLDEN_APPLE, "Item Limit", "Limit how many of an item a player can carry.", "item-limit.enabled",
+                        (p, back) -> new ItemLimitMenu(plugin, p, back).open())
+                        .hint("Over the limit|the extra is dropped", "/smp itemlimit add <limit>|Limit the held item"),
                 new Feature(Category.PVP, Material.IRON_SWORD, "Combat", "Combat timer, command blocking, safe zone.", "combat.enabled",
                         (p, back) -> Menus.combat(plugin, p, back).open())
                         .hint("/smp combat seconds <n>|Combat time (default 20)", "/smp safezone add <name> <radius>|Safe zone where you stand"),
@@ -106,6 +109,9 @@ public final class Features {
                 // Administrator
                 new Feature(Category.ADMIN, Material.BARRIER, "Item Ban", "Ban any item you want.", null,
                         (p, back) -> new Menus.ItemBanList(plugin, p, back).open()),
+                new Feature(Category.ADMIN, Material.ENDER_EYE, "Anti Health Indicator", "Hide the health of other entities from mods.", "anti-health.enabled",
+                        (p, back) -> Menus.antiHealth(plugin, p, back).open())
+                        .hint("Needs ProtocolLib|" + (plugin.antiHealth != null ? "installed" : "NOT installed")),
                 new Feature(Category.ADMIN, Material.MACE, "Ban Animation", "A giant mace slams banned players.", "tempban.animation.enabled", null),
                 new Feature(Category.ADMIN, Material.IRON_BARS, "Punishments", "Ban, mute, kick or warn a player.", null,
                         (p, back) -> new TempBanGuis.PlayerPicker(plugin, p, back).open()),

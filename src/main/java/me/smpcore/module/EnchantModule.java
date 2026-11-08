@@ -11,7 +11,17 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.enchantment.EnchantItemEvent;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.server.ServerCommandEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 
@@ -22,6 +32,118 @@ public final class EnchantModule implements Listener {
 
     public EnchantModule(SMPCore plugin) {
         this.plugin = plugin;
+        // items that already have too-strong enchantments (chests, /enchant, loot, trades) get cleaned up as well
+        Bukkit.getScheduler().runTaskTimer(plugin, this::sweepAll, 100L, 100L);
+    }
+
+    private boolean clean() {
+        return enabled() && plugin.getConfig().getBoolean("enchant-limiter.clean-existing", true);
+    }
+
+    /**
+     * Lowers enchantments over the limit to the limit and removes banned ones (limit 0), on the item itself
+     * (enchanted books: their stored enchantments). @return true when something changed
+     */
+    public boolean sanitize(ItemStack item) {
+        if (item == null || item.getType().isAir() || !item.hasItemMeta()) return false;
+        boolean changed = false;
+        if (item.getItemMeta() instanceof EnchantmentStorageMeta esm) {
+            for (Map.Entry<Enchantment, Integer> en : new ArrayList<>(esm.getStoredEnchants().entrySet())) {
+                int lim = limit(item, en.getKey());
+                if (lim == 0) {
+                    esm.removeStoredEnchant(en.getKey());
+                    changed = true;
+                } else if (lim > 0 && en.getValue() > lim) {
+                    esm.addStoredEnchant(en.getKey(), lim, true);
+                    changed = true;
+                }
+            }
+            if (changed) item.setItemMeta(esm);
+            return changed;
+        }
+        for (Map.Entry<Enchantment, Integer> en : new ArrayList<>(item.getEnchantments().entrySet())) {
+            int lim = limit(item, en.getKey());
+            if (lim == 0) {
+                item.removeEnchantment(en.getKey());
+                changed = true;
+            } else if (lim > 0 && en.getValue() > lim) {
+                item.addUnsafeEnchantment(en.getKey(), lim);
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    /** @return true when any item in the inventory was changed */
+    public boolean sanitize(Inventory inv) {
+        boolean any = false;
+        for (int i = 0; i < inv.getSize(); i++) {
+            ItemStack it = inv.getItem(i);
+            if (sanitize(it)) {
+                inv.setItem(i, it);
+                any = true;
+            }
+        }
+        return any;
+    }
+
+    private void sanitizePlayer(Player p) {
+        if (!clean() || p.hasPermission(BYPASS)) return;
+        boolean a = sanitize(p.getInventory());
+        boolean b = sanitize(p.getEnderChest());
+        if (a || b) Msg.bar(p, plugin.getConfig().getString("enchant-limiter.clean-message", "Enchantments over the limit were lowered."));
+    }
+
+    private void sweepAll() {
+        if (!clean()) return;
+        for (Player p : Bukkit.getOnlinePlayers()) sanitizePlayer(p);
+    }
+
+    /** Chests, barrels, shulker boxes, hoppers, loot chests: cleaned the moment someone opens them. */
+    @EventHandler
+    public void onOpen(InventoryOpenEvent e) {
+        if (!clean() || e.getPlayer().hasPermission(BYPASS)) return;
+        Inventory top = e.getInventory();
+        if (top.getHolder() instanceof Player) return;   // a player's own inventory is handled by the sweep
+        sanitize(top);
+    }
+
+    @EventHandler
+    public void onClick(InventoryClickEvent e) {
+        if (!clean() || !(e.getWhoClicked() instanceof Player p)) return;
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (p.isOnline()) sanitizePlayer(p);
+        });
+    }
+
+    @EventHandler
+    public void onClose(InventoryCloseEvent e) {
+        if (clean() && e.getPlayer() instanceof Player p) sanitizePlayer(p);
+    }
+
+    @EventHandler
+    public void onPickup(EntityPickupItemEvent e) {
+        if (!clean() || !(e.getEntity() instanceof Player p) || p.hasPermission(BYPASS)) return;
+        ItemStack st = e.getItem().getItemStack();
+        if (sanitize(st)) e.getItem().setItemStack(st);
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent e) {
+        if (clean()) Bukkit.getScheduler().runTask(plugin, () -> sanitizePlayer(e.getPlayer()));
+    }
+
+    /** /enchant (by a player or the console) is followed by a clean-up of everyone's items a moment later. */
+    @EventHandler
+    public void onEnchantCommand(PlayerCommandPreprocessEvent e) {
+        String m = e.getMessage().toLowerCase();
+        if (clean() && (m.startsWith("/enchant ") || m.startsWith("/minecraft:enchant "))) Bukkit.getScheduler().runTaskLater(plugin, this::sweepAll, 2L);
+    }
+
+    @EventHandler
+    public void onEnchantConsole(ServerCommandEvent e) {
+        String m = e.getCommand().toLowerCase();
+        if (clean() && (m.startsWith("enchant ") || m.startsWith("minecraft:enchant "))) Bukkit.getScheduler().runTaskLater(plugin, this::sweepAll, 2L);
     }
 
     private boolean enabled() {

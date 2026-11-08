@@ -64,6 +64,8 @@ public final class CommandsMenu extends PagedGui<CommandsMenu.Cmd> {
             new Cmd(Material.COMPARATOR, "/smp", "Open this settings menu.", "smpcore.admin", null, "/smpcore, /smpsettings"),
             new Cmd(Material.REDSTONE, "/settings", "Open this settings menu (same as /smp).", "smpcore.admin", null, null),
             new Cmd(Material.REPEATER, "/smp reload", "Re-read config.yml and the ban lists.", "smpcore.admin", null, null),
+            new Cmd(Material.BARRIER, "/smp maintenance <on|off>", "Close the server: only ops and smpcore.maintenance.bypass can join. Works from the console.", "smpcore.admin", "tweaks.maintenance", null),
+            new Cmd(Material.ENCHANTED_GOLDEN_APPLE, "/smp itemlimit <add|list|remove>", "Limit how many of an item a player can carry. Hold the item for add.", "smpcore.admin", "item-limit.enabled", null),
             new Cmd(Material.HOPPER, "/smp itemban <add|remove|list> [material]", "Ban or allow an item.", "smpcore.admin", "item-ban.enabled", null),
             new Cmd(Material.NAME_TAG, "/smp whitelist <add|remove|list>", "Custom weapon whitelist for banned base items.", "smpcore.admin", null, null),
             new Cmd(Material.CLOCK, "/smp grace <start|stop> [player|all]", "Start or stop the grace period.", "smpcore.admin", "grace.enabled", null),

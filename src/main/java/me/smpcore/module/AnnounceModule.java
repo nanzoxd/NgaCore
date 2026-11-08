@@ -117,7 +117,7 @@ public final class AnnounceModule {
     private BukkitTask show(Supplier<Collection<? extends Player>> to, List<String> pages, int pageTicks, Preset pr) {
         var c = plugin.getConfig();
         int total = pageTicks * pages.size();
-        String headline = c.getString("announce.title", Theme.smallCaps("announcement"));
+        String headline = Theme.smallCaps(c.getString("announce.title", "announcement"));
         boolean glint = c.getBoolean("announce.glint.enabled", true);
         int period = Math.max(10, c.getInt("announce.glint.period-ticks", 50));
         double width = Math.max(0.05, c.getDouble("announce.glint.width", 0.22));
@@ -140,7 +140,7 @@ public final class AnnounceModule {
                         Duration.ofMillis(400),
                         Duration.ofMillis(800));                          // fades out by itself after the last frame
                 Title title = Title.title(headline(headline, stops, center, width),
-                        Component.text(pages.get(page), subColor), times);
+                        Component.text(Theme.smallCaps(pages.get(page)), subColor), times);
                 for (Player p : to.get()) p.showTitle(title);
                 t += FRAME;
             }

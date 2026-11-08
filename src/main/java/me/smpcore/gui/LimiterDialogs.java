@@ -7,6 +7,7 @@ import java.util.function.BiConsumer;
 import me.smpcore.SMPCore;
 import me.smpcore.module.EnchantModule;
 import me.smpcore.module.PotionModule;
+import me.smpcore.util.Icons;
 import me.smpcore.util.Theme;
 import org.bukkit.Registry;
 import org.bukkit.enchantments.Enchantment;
@@ -23,6 +24,11 @@ public final class LimiterDialogs {
     private static final int PER_PAGE = 12;
 
     private record Row(String key, String label, Runnable click) {}
+
+    /** Icon + space in front of a name, or nothing when {@code dialog-icons} is off (no resource pack). */
+    private static String icon(SMPCore plugin, String glyph) {
+        return plugin.getConfig().getBoolean("dialog-icons", true) && !glyph.isEmpty() ? glyph + " " : "";
+    }
 
     private static String state(int lim) {
         return lim < 0 ? Theme.green("Unlimited") : lim == 0 ? Theme.red("Banned") : "Max " + Theme.yellow(lim);
@@ -74,7 +80,7 @@ public final class LimiterDialogs {
         List<Row> rows = new ArrayList<>();
         for (PotionEffectType t : types) {
             String key = t.getKey().getKey();
-            rows.add(new Row(key + " " + Theme.pretty(key).toLowerCase(), Theme.pretty(key) + " " + state(module.limit(t)),
+            rows.add(new Row(key + " " + Theme.pretty(key).toLowerCase(), icon(plugin, Icons.effect(t)) + Theme.pretty(key) + " " + state(module.limit(t)),
                     () -> potionSlider(plugin, p, module, t, back, query, page)));
         }
         pick(p, "Potion Limiter", query, page, rows,
@@ -99,7 +105,7 @@ public final class LimiterDialogs {
         String path = "potion-limiter.effects." + key;
         int cur = module.limit(t);
         Runnable list = () -> potions(plugin, p, module, back, query, page);
-        Dialogs.slider(p, Theme.pretty(key),
+        Dialogs.slider(p, icon(plugin, Icons.effect(t)) + Theme.pretty(key),
                 List.of("Now " + state(cur), "0 = banned, 1 = level I, 2 = level II ..."),
                 "Max level", 0, 10, 1, cur < 0 ? 10 : cur, v -> {
                     save(plugin, path, Math.round(v));
@@ -124,7 +130,7 @@ public final class LimiterDialogs {
         List<Row> rows = new ArrayList<>();
         for (Enchantment en : all) {
             String key = en.getKey().getKey();
-            rows.add(new Row(key + " " + Theme.pretty(key).toLowerCase(), Theme.pretty(key) + " " + state(module.limit(null, en)),
+            rows.add(new Row(key + " " + Theme.pretty(key).toLowerCase(), icon(plugin, Icons.enchant(en)) + Theme.pretty(key) + " " + state(module.limit(null, en)),
                     () -> enchantSlider(plugin, p, module, en, back, query, page)));
         }
         Runnable again = () -> enchants(plugin, p, module, back, query, page);
@@ -139,7 +145,7 @@ public final class LimiterDialogs {
         String path = "enchant-limiter.limits." + key;
         int cur = module.limit(null, en);
         Runnable list = () -> enchants(plugin, p, module, back, query, page);
-        Dialogs.slider(p, Theme.pretty(key),
+        Dialogs.slider(p, icon(plugin, Icons.enchant(en)) + Theme.pretty(key),
                 List.of("Now " + state(cur), "Vanilla max " + Theme.yellow(en.getMaxLevel()), "0 = banned"),
                 "Max level", 0, 10, 1, cur < 0 ? Math.min(10, en.getMaxLevel()) : Math.min(10, cur), v -> {
                     save(plugin, path, Math.round(v));

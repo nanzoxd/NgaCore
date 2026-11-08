@@ -45,6 +45,8 @@ public final class SMPCore extends JavaPlugin {
     public NetheriteBanModule netherite;
     public GraceModule grace;
     public me.smpcore.module.SpawnModule spawn;
+    public me.smpcore.module.ItemLimitModule itemLimit;
+    public me.smpcore.module.AntiHealthHook antiHealth;
     public me.smpcore.module.StaffModule staff;
     public me.smpcore.module.RandomTpModule randomTp;
     private PotionModule potions;
@@ -70,6 +72,15 @@ public final class SMPCore extends JavaPlugin {
         dragon = new DragonModule(this);
         TweaksModule tweaks = new TweaksModule(this);
         itemBan = new ItemBanModule(this);
+        itemLimit = new me.smpcore.module.ItemLimitModule(this);
+        // Anti Health Indicator needs ProtocolLib; without it SMPCore simply runs without that feature
+        if (org.bukkit.Bukkit.getPluginManager().getPlugin("ProtocolLib") != null) {
+            try {
+                antiHealth = new me.smpcore.module.AntiHealthHook(this);
+            } catch (Throwable t) {
+                getLogger().warning("Anti Health Indicator couldn't start (ProtocolLib problem): " + t);
+            }
+        }
         netherite = new NetheriteBanModule(this);
         potions = new PotionModule(this);
         enchants = new EnchantModule(this);
@@ -85,6 +96,7 @@ public final class SMPCore extends JavaPlugin {
         pm.registerEvents(tweaks, this);
         pm.registerEvents(new MoreTweaksModule(this), this);
         pm.registerEvents(itemBan, this);
+        pm.registerEvents(itemLimit, this);
         pm.registerEvents(netherite, this);
         pm.registerEvents(new InstaRestockModule(this), this);
         staff = new me.smpcore.module.StaffModule(this);
@@ -227,6 +239,7 @@ public final class SMPCore extends JavaPlugin {
         Msg.init(this);
         tempBans.load();
         itemBan.load();
+        itemLimit.load();
         spawn.load();
         combat.load();
         netherite.load();

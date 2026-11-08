@@ -35,6 +35,8 @@ public final class SmpCommand implements TabExecutor {
             case "grace" -> grace(s, a);
             case "whitelist" -> whitelist(s, a);
             case "spawn" -> spawnCfg(s, a);
+            case "itemlimit" -> itemLimit(s, a);
+            case "maintenance" -> maintenance(s, a);
             case "rtp" -> rtp(s, a);
             case "combat" -> combat(s, a);
             case "safezone" -> safezone(s, a);
@@ -94,6 +96,59 @@ public final class SmpCommand implements TabExecutor {
                 Msg.send(s, "Whitelisted custom weapons " + Theme.yellow(wl.rules().size()));
                 int n = 1;
                 for (var r : wl.rules()) Msg.send(s, Theme.yellow(n++) + " " + Theme.green(Theme.esc(r.label())) + " " + Theme.c(Theme.DIM, Theme.pretty(r.material().name())));
+            }
+        }
+    }
+
+    /** /smp maintenance [on|off|status] - works from the console too. */
+    private void maintenance(CommandSender s, String[] a) {
+        boolean now = plugin.getConfig().getBoolean("tweaks.maintenance", false);
+        String v = a.length > 1 ? a[1].toLowerCase() : "status";
+        switch (v) {
+            case "on", "off" -> {
+                now = v.equals("on");
+                plugin.getConfig().set("tweaks.maintenance", now);
+                plugin.saveConfig();
+                Msg.send(s, "Maintenance mode is now " + (now ? Theme.red("on") : Theme.green("off")) + ". "
+                        + Theme.c(Theme.DIM, now ? "Only ops and smpcore.maintenance.bypass can join." : "Everyone can join again."));
+            }
+            default -> Msg.send(s, "Maintenance mode is " + (now ? Theme.red("on") : Theme.green("off")) + ". "
+                    + Theme.c(Theme.DIM, "Use ") + Theme.blue("/smp maintenance <on|off>"));
+        }
+    }
+
+    /** /smp itemlimit add <limit> (item in hand) | list | remove <number> */
+    private void itemLimit(CommandSender s, String[] a) {
+        var il = plugin.itemLimit;
+        String sub = a.length > 1 ? a[1].toLowerCase() : "list";
+        switch (sub) {
+            case "add" -> {
+                if (!(s instanceof Player p)) {
+                    Msg.send(s, Theme.red("Hold the item in game."));
+                    return;
+                }
+                org.bukkit.inventory.ItemStack held = p.getInventory().getItemInMainHand();
+                if (held.getType().isAir()) {
+                    Msg.send(s, Theme.red("Hold the item you want to limit."));
+                    return;
+                }
+                int limit = a.length > 2 && parse(a[2]) >= 0 ? parse(a[2]) : il.defaultLimit();
+                var r = il.add(held, false, limit);
+                Msg.send(s, "Limit for " + Theme.yellow(Theme.esc(r.label())) + " is " + Theme.yellow(r.limit()) + (r.whole() ? " (whole item type)." : " (this exact item)."));
+            }
+            case "remove" -> {
+                int i = a.length > 2 ? parse(a[2]) : -1;
+                if (i < 1 || i > il.rules().size()) {
+                    Msg.send(s, "Usage " + Theme.blue("/smp itemlimit remove <number>") + " (see " + Theme.blue("/smp itemlimit list") + ")");
+                    return;
+                }
+                il.remove(il.rules().get(i - 1));
+                Msg.send(s, "Removed limit " + Theme.yellow(i) + ".");
+            }
+            default -> {
+                Msg.send(s, "Item limits " + Theme.yellow(il.rules().size()));
+                int n = 1;
+                for (var r : il.rules()) Msg.send(s, Theme.yellow(n++) + " " + Theme.green(Theme.esc(r.label())) + " " + Theme.c(Theme.DIM, "max " + r.limit() + (r.whole() ? " (type)" : " (exact)")));
             }
         }
     }
@@ -227,9 +282,11 @@ public final class SmpCommand implements TabExecutor {
     @Override
     public List<String> onTabComplete(CommandSender s, Command cmd, String label, String[] a) {
         List<String> out = new ArrayList<>();
-        if (a.length == 1) out.addAll(List.of("menu", "reload", "itemban", "grace", "whitelist", "spawn", "rtp", "combat", "safezone"));
+        if (a.length == 1) out.addAll(List.of("menu", "reload", "itemban", "grace", "whitelist", "spawn", "rtp", "combat", "safezone", "itemlimit", "maintenance"));
         else if (a.length == 2 && a[0].equalsIgnoreCase("grace")) out.addAll(List.of("start", "stop"));
         else if (a.length == 2 && a[0].equalsIgnoreCase("spawn")) out.add("delay");
+        else if (a.length == 2 && a[0].equalsIgnoreCase("itemlimit")) out.addAll(List.of("add", "list", "remove"));
+        else if (a.length == 2 && a[0].equalsIgnoreCase("maintenance")) out.addAll(List.of("on", "off", "status"));
         else if (a.length == 2 && a[0].equalsIgnoreCase("combat")) out.addAll(List.of("seconds", "rejoin", "clear"));
         else if (a.length == 3 && a[0].equalsIgnoreCase("combat") && a[1].equalsIgnoreCase("clear")) {
             out.add("all");
